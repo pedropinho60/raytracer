@@ -1,0 +1,13 @@
+[package]
+name = "raytracer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.102"
+bytemuck = { version = "1.25.0", features = ["derive"] }
+clap = { version = "4.6.0", features = ["derive"] }
+png = "0.18.1"
+quick-xml = { version = "0.39.2", features = ["serialize"] }
+serde = { version = "1.0.228", features = ["derive"] }
+thiserror = "2.0.18"
