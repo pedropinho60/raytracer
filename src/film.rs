@@ -1,12 +1,13 @@
 use std::{
     fs::File,
     io::{BufWriter, Write},
+    path::PathBuf,
 };
 
 use serde::Deserialize;
 
 use crate::Result;
-use crate::{Point2, RGBColor};
+use crate::{RGBColor, math::Point2};
 
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -18,7 +19,7 @@ pub(crate) enum ImageType {
 pub(crate) struct Film {
     width: u16,
     height: u16,
-    filename: String,
+    filename: PathBuf,
     img_type: ImageType,
     buffer: Vec<RGBColor>,
 }
@@ -26,7 +27,7 @@ pub(crate) struct Film {
 impl Film {
     const MAX_CHANNEL_VALUE: u8 = u8::MAX;
 
-    pub fn new(width: u16, height: u16, filename: &str, img_type: ImageType) -> Self {
+    pub fn new(width: u16, height: u16, filename: PathBuf, img_type: ImageType) -> Self {
         let buffer = vec![RGBColor::default(); width as usize * height as usize];
 
         Self {

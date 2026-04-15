@@ -3,6 +3,6 @@
     <film type="image" w_res="800" h_res="600" filename="interpolated_bkg.png" img_type="png" />
     <world_begin/>
         <!-- This defines an interpolated background -->
-        <background type="4_colors" bl="0 51" tl="0 255 51" tr="255 255 51" br="255 0 51" />
+        <background type="4_colors" bl="0 0 51" tl="0 255 51" tr="255 255 51" br="255 0 51" />
     <world_end/>
 </RT3>

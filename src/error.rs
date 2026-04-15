@@ -12,7 +12,7 @@ pub enum SceneError {
     #[error("Failed to read file")]
     Io(#[from] io::Error),
 
-    #[error("Invalid scene definition")]
+    #[error("Invalid scene definition: {0}")]
     MissingComponent(&'static str),
 
     #[error("Failed to encode PNG")]

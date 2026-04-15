@@ -1,8 +1,12 @@
-use std::str::FromStr;
+use std::{path::PathBuf, str::FromStr};
 
 use serde::{Deserialize, Deserializer};
 
-use crate::{RGBColor, film::ImageType};
+use crate::{
+    RGBColor, WindowSize,
+    film::ImageType,
+    math::{Point3, Vec3},
+};
 
 fn parse_number<'de, T, D>(deserializer: D) -> Result<T, D::Error>
 where
@@ -16,15 +20,27 @@ where
 
 #[derive(Debug, Deserialize)]
 #[serde(rename = "RT3")]
-pub(crate) struct Rt3 {
+pub struct Rt3 {
     #[serde(rename = "$value")]
     pub commands: Vec<SceneCommand>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub(crate) enum SceneCommand {
+pub enum SceneCommand {
+    Lookat {
+        #[serde(rename = "@look_from")]
+        look_from: Point3,
+        #[serde(rename = "@look_at")]
+        look_at: Point3,
+        #[serde(rename = "@up")]
+        up: Vec3,
+    },
     Camera(CameraType),
+    Integrator {
+        #[serde(rename = "@type")]
+        _integrator_type: String,
+    },
     Film(FilmType),
     WorldBegin,
     Background(BackgroundType),
@@ -37,7 +53,7 @@ pub enum CameraType {
     #[serde(rename = "orthographic")]
     Orthographic {
         #[serde(rename = "@screen_window")]
-        screen_window: String,
+        screen_window: WindowSize,
     },
     #[serde(rename = "perspective")]
     Perspective {
@@ -56,7 +72,7 @@ pub enum FilmType {
         #[serde(rename = "@h_res", deserialize_with = "parse_number")]
         h_res: u16,
         #[serde(rename = "@filename")]
-        filename: String,
+        filename: PathBuf,
         #[serde(rename = "@img_type")]
         img_type: ImageType,
     },
