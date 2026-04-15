@@ -1,9 +1,12 @@
 use crate::{
+    RGBColor,
     camera::{Camera, OrthographicCamera, PerspectiveCamera},
     cli::Cli,
     error::SceneError,
     math::{Point2, Point3, Vec3},
-    parse::CameraType,
+    object::{Object, Sphere},
+    parse::{CameraType, ObjectType},
+    scene::Scene,
 };
 use std::fs;
 
@@ -17,8 +20,7 @@ use crate::{
 };
 
 pub struct Api {
-    background: Box<dyn Background>,
-    camera: Box<dyn Camera>,
+    scene: Scene,
 }
 
 impl Api {
@@ -31,6 +33,8 @@ impl Api {
         let mut parsed_background: Option<Box<dyn Background>> = None;
         let mut parsed_camera_args: Option<(Point3, Point3, Vec3)> = None;
         let mut parsed_camera_type = None;
+
+        let mut objects: Vec<Box<dyn Object>> = Vec::new();
 
         for command in scene.commands {
             match command {
@@ -56,6 +60,11 @@ impl Api {
                     look_at,
                     up,
                 } => parsed_camera_args = Some((look_at, look_from, up)),
+                SceneCommand::Object(object_type) => match object_type {
+                    ObjectType::Sphere { center, radius } => {
+                        objects.push(Box::new(Sphere { center, radius }))
+                    }
+                },
                 _ => (),
             }
         }
@@ -85,12 +94,21 @@ impl Api {
             }
         };
 
-        Ok(Self { background, camera })
+        Ok(Self {
+            scene: Scene {
+                background,
+                camera,
+                objects,
+            },
+        })
     }
 
     pub fn render(&mut self) -> Result<()> {
-        let height = self.camera.film().height();
-        let width = self.camera.film().width();
+        let camera = &mut self.scene.camera;
+        let background = &self.scene.background;
+
+        let height = camera.film().height();
+        let width = camera.film().width();
 
         for row in 0..height {
             let normalized_row = row as f64 / (height - 1) as f64;
@@ -98,15 +116,25 @@ impl Api {
             for col in 0..width {
                 let normalized_col = col as f64 / (width - 1) as f64;
 
-                let color = self.background.sample(normalized_row, normalized_col);
+                let mut color = background.sample(normalized_row, normalized_col);
 
-                let _ray = self.camera.generate_ray(Point2 { row, col });
+                let ray = camera.generate_ray(Point2 { row, col });
 
-                self.camera.film().add_sample(Point2 { row, col }, color);
+                for object in &self.scene.objects {
+                    if object.intersect_p(ray) {
+                        color = RGBColor {
+                            red: 255,
+                            green: 0,
+                            blue: 0,
+                        }
+                    }
+                }
+
+                camera.film().add_sample(Point2 { row, col }, color);
             }
         }
 
-        self.camera.film().write_image()?;
+        camera.film().write_image()?;
 
         Ok(())
     }

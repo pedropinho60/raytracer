@@ -8,8 +8,10 @@ mod cli;
 mod error;
 mod film;
 mod math;
+mod object;
 mod parse;
 mod ray;
+mod scene;
 
 pub use api::Api;
 pub use cli::Cli;

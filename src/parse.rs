@@ -43,6 +43,8 @@ pub enum SceneCommand {
     },
     Film(FilmType),
     WorldBegin,
+    Material(MaterialType),
+    Object(ObjectType),
     Background(BackgroundType),
     WorldEnd,
 }
@@ -96,5 +98,27 @@ pub enum BackgroundType {
         tr: RGBColor,
         #[serde(rename = "@br")]
         br: RGBColor,
+    },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "@type")]
+pub enum ObjectType {
+    #[serde(rename = "sphere")]
+    Sphere {
+        #[serde(rename = "@center")]
+        center: Point3,
+        #[serde(rename = "@radius", deserialize_with = "parse_number")]
+        radius: f64,
+    },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "@type")]
+pub enum MaterialType {
+    #[serde(rename = "flat")]
+    Flat {
+        #[serde(rename = "@color")]
+        color: String,
     },
 }
