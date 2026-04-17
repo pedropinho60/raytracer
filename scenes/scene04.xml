@@ -14,6 +14,6 @@
         <object type="sphere" radius="0.4" center="1 -0.5 3.5" />
 
         <material type="flat" color="127 127 127" />
-        <object type="sphere" radius="500" center="0 -501 0" />
+        <object type="plane" point="0 -1 0" normal="0 1 0" />
     <world_end/>
 </RT3>

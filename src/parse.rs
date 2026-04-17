@@ -10,7 +10,7 @@ use crate::{
     integrator::{Integrator, NormalMapIntegrator, RayCastIntegrator},
     material::Material,
     math::{Point3, Vec3},
-    primitive::{Primitive, Sphere},
+    primitive::{Plane, Primitive, Sphere},
     scene::Scene,
 };
 
@@ -161,6 +161,13 @@ pub enum ObjectType {
         #[serde(rename = "@radius", deserialize_with = "parse_number")]
         radius: f64,
     },
+    #[serde(rename = "plane")]
+    Plane {
+        #[serde(rename = "@point")]
+        point: Point3,
+        #[serde(rename = "@normal")]
+        normal: Vec3,
+    },
 }
 
 impl ObjectType {
@@ -168,6 +175,9 @@ impl ObjectType {
         match self {
             ObjectType::Sphere { center, radius } => {
                 Primitive::new(Sphere { center, radius }.into(), material_id)
+            }
+            ObjectType::Plane { point, normal } => {
+                Primitive::new(Plane::new(point, normal).into(), material_id)
             }
         }
     }

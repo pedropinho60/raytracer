@@ -34,12 +34,14 @@ impl Primitive {
 #[derive(Debug, Clone, From)]
 pub enum Shape {
     Sphere(Sphere),
+    Plane(Plane),
 }
 
 impl Shape {
     pub fn intersect(&self, ray: Ray, t_min: f64, t_max: f64) -> Option<(f64, Point3, Vec3)> {
         match self {
             Shape::Sphere(inner) => inner.intersect(ray, t_min, t_max),
+            Shape::Plane(inner) => inner.intersect(ray, t_min, t_max),
         }
     }
 }
@@ -86,6 +88,47 @@ impl Sphere {
         let outward_vector = point - self.center;
 
         let mut normal = outward_vector / self.radius;
+
+        if ray.direction.dot(normal) > 0.0 {
+            normal = -normal;
+        }
+
+        Some((t, point, normal))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Plane {
+    point: Point3,
+    normal: Vec3,
+}
+
+impl Plane {
+    pub fn new(point: Point3, normal: Vec3) -> Self {
+        Self {
+            point,
+            normal: normal.normalize(),
+        }
+    }
+
+    pub fn intersect(&self, ray: Ray, t_min: f64, t_max: f64) -> Option<(f64, Point3, Vec3)> {
+        let d_hat = ray.direction.normalize();
+        let denom = self.normal.dot(d_hat);
+
+        if denom.abs() < 1e-6 {
+            return None;
+        }
+
+        let p0l0 = self.point - ray.origin;
+        let t = p0l0.dot(self.normal) / denom;
+
+        if t < t_min || t > t_max {
+            return None;
+        }
+
+        let point = ray.origin + d_hat * t;
+
+        let mut normal = self.normal;
 
         if ray.direction.dot(normal) > 0.0 {
             normal = -normal;
