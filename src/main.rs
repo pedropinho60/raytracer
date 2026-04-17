@@ -1,13 +1,11 @@
 use anyhow::Result;
 use clap::Parser;
-use raytracer::{Api, Cli};
+use raytracer::Cli;
 
 fn main() -> Result<()> {
     let args = Cli::parse();
 
-    let mut api = Api::init(args)?;
-
-    api.render()?;
+    raytracer::run(args)?;
 
     Ok(())
 }

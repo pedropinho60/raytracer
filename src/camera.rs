@@ -1,3 +1,5 @@
+use derive_more::From;
+
 use crate::{
     WindowSize,
     film::Film,
@@ -5,33 +7,48 @@ use crate::{
     ray::Ray,
 };
 
-pub trait Camera {
-    fn generate_ray(&self, point: Point2) -> Ray;
-    fn film(&mut self) -> &mut Film;
+#[derive(From)]
+pub enum Camera {
+    Perspective(PerspectiveCamera),
+    Orthographic(OrthographicCamera),
+}
+
+impl Camera {
+    pub fn generate_ray(&self, point: Point2) -> Ray {
+        match self {
+            Camera::Perspective(inner) => inner.generate_ray(point),
+            Camera::Orthographic(inner) => inner.generate_ray(point),
+        }
+    }
+
+    pub fn film(&mut self) -> &mut Film {
+        match self {
+            Camera::Perspective(inner) => &mut inner.film,
+            Camera::Orthographic(inner) => &mut inner.film,
+        }
+    }
 }
 
 pub struct PerspectiveCamera {
-    look_at: Point3,
     look_from: Point3,
+    look_at: Point3,
     up: Vec3,
     fovy: u16,
     film: Film,
 }
 
 impl PerspectiveCamera {
-    pub fn new(look_at: Point3, look_from: Point3, up: Vec3, fovy: u16, film: Film) -> Self {
+    pub fn new(look_from: Point3, look_at: Point3, up: Vec3, fovy: u16, film: Film) -> Self {
         Self {
-            look_at,
             look_from,
+            look_at,
             up,
             fovy,
             film,
         }
     }
-}
 
-impl Camera for PerspectiveCamera {
-    fn generate_ray(&self, point: Point2) -> Ray {
+    pub fn generate_ray(&self, point: Point2) -> Ray {
         let width = self.film.width() as f64;
         let height = self.film.height() as f64;
 
@@ -54,20 +71,13 @@ impl Camera for PerspectiveCamera {
 
         let direction = vec_w + u * vec_u + v * vec_v;
 
-        Ray {
-            origin: self.look_from,
-            direction,
-        }
-    }
-
-    fn film(&mut self) -> &mut Film {
-        &mut self.film
+        Ray::new(self.look_from, direction)
     }
 }
 
 pub struct OrthographicCamera {
-    look_at: Point3,
     look_from: Point3,
+    look_at: Point3,
     up: Vec3,
     dimensions: WindowSize,
     film: Film,
@@ -75,24 +85,22 @@ pub struct OrthographicCamera {
 
 impl OrthographicCamera {
     pub fn new(
-        look_at: Point3,
         look_from: Point3,
+        look_at: Point3,
         up: Vec3,
         dimensions: WindowSize,
         film: Film,
     ) -> Self {
         Self {
-            look_at,
             look_from,
+            look_at,
             up,
             film,
             dimensions,
         }
     }
-}
 
-impl Camera for OrthographicCamera {
-    fn generate_ray(&self, point: Point2) -> Ray {
+    pub fn generate_ray(&self, point: Point2) -> Ray {
         let width = self.film.width() as f64;
         let height = self.film.height() as f64;
 
@@ -111,13 +119,6 @@ impl Camera for OrthographicCamera {
 
         let origin = self.look_from + u * vec_u + v * vec_v;
 
-        Ray {
-            origin,
-            direction: vec_w,
-        }
-    }
-
-    fn film(&mut self) -> &mut Film {
-        &mut self.film
+        Ray::new(origin, vec_w)
     }
 }

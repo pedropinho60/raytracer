@@ -1,9 +1,23 @@
+use derive_more::From;
+
 use crate::RGBColor;
 
-pub trait Background {
-    fn sample(&self, u: f64, v: f64) -> RGBColor;
+#[derive(Debug, Clone, From)]
+pub enum Background {
+    SingleColor(SingleColorBackground),
+    Gradient(GradientBackground),
 }
 
+impl Background {
+    pub fn sample(&self, u: f64, v: f64) -> RGBColor {
+        match self {
+            Background::SingleColor(inner) => inner.sample(u, v),
+            Background::Gradient(inner) => inner.sample(u, v),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct SingleColorBackground {
     color: RGBColor,
 }
@@ -12,14 +26,13 @@ impl SingleColorBackground {
     pub fn new(color: RGBColor) -> Self {
         Self { color }
     }
-}
 
-impl Background for SingleColorBackground {
-    fn sample(&self, _u: f64, _v: f64) -> RGBColor {
+    pub fn sample(&self, _u: f64, _v: f64) -> RGBColor {
         self.color
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct GradientBackground {
     tl: RGBColor,
     tr: RGBColor,
@@ -39,10 +52,8 @@ impl GradientBackground {
             blue: ((1. - t) * a.blue as f64 + t * b.blue as f64) as u8,
         }
     }
-}
 
-impl Background for GradientBackground {
-    fn sample(&self, u: f64, v: f64) -> RGBColor {
+    pub fn sample(&self, u: f64, v: f64) -> RGBColor {
         let top = Self::lerp(self.tl, self.tr, v);
         let bot = Self::lerp(self.bl, self.br, v);
 

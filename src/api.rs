@@ -1,141 +1,168 @@
 use crate::{
-    RGBColor,
-    camera::{Camera, OrthographicCamera, PerspectiveCamera},
+    camera::Camera,
     cli::Cli,
     error::SceneError,
-    math::{Point2, Point3, Vec3},
-    object::{Object, Sphere},
-    parse::{CameraType, ObjectType},
+    material::Material,
+    parse::{CameraArgs, CameraType, IntegratorType},
+    primitive::AggregatePrimitive,
     scene::Scene,
 };
-use std::fs;
+use std::{collections::HashMap, fs, path::Path};
 
 use quick_xml::de::from_str;
 
 use crate::{
     Result,
-    background::{Background, GradientBackground, SingleColorBackground},
+    background::Background,
     film::Film,
-    parse::{BackgroundType, FilmType, Rt3, SceneCommand},
+    parse::{FilmType, Rt3, SceneCommand},
 };
 
-pub struct Api {
-    scene: Scene,
+pub struct RenderState {
+    pub current_film: Option<Film>,
+    pub current_background: Option<Background>,
+    pub current_camera_args: Option<CameraArgs>,
+    pub current_camera_type: Option<CameraType>,
+    pub current_integrator_type: Option<IntegratorType>,
+
+    pub materials: Vec<Material>,
+    pub material_names: HashMap<String, usize>,
+    pub primitives: AggregatePrimitive,
 }
 
-impl Api {
-    pub fn init(args: Cli) -> Result<Self, SceneError> {
-        let xml_data = fs::read_to_string(args.input_scene_file)?;
-
-        let scene = from_str::<Rt3>(&xml_data)?;
-
-        let mut parsed_film = None;
-        let mut parsed_background: Option<Box<dyn Background>> = None;
-        let mut parsed_camera_args: Option<(Point3, Point3, Vec3)> = None;
-        let mut parsed_camera_type = None;
-
-        let mut objects: Vec<Box<dyn Object>> = Vec::new();
-
-        for command in scene.commands {
-            match command {
-                SceneCommand::Film(FilmType::Image {
-                    w_res,
-                    h_res,
-                    filename,
-                    img_type,
-                }) => parsed_film = Some(Film::new(w_res, h_res, filename, img_type)),
-                SceneCommand::Background(background_type) => match background_type {
-                    BackgroundType::SingleColor { color } => {
-                        parsed_background = Some(Box::new(SingleColorBackground::new(color)))
-                    }
-                    BackgroundType::FourColors { bl, tl, tr, br } => {
-                        parsed_background = Some(Box::new(GradientBackground::new(tl, tr, bl, br)))
-                    }
-                },
-                SceneCommand::Camera(camera_type) => {
-                    parsed_camera_type = Some(camera_type);
-                }
-                SceneCommand::Lookat {
-                    look_from,
-                    look_at,
-                    up,
-                } => parsed_camera_args = Some((look_at, look_from, up)),
-                SceneCommand::Object(object_type) => match object_type {
-                    ObjectType::Sphere { center, radius } => {
-                        objects.push(Box::new(Sphere { center, radius }))
-                    }
-                },
-                _ => (),
-            }
+impl RenderState {
+    pub fn new() -> Self {
+        Self {
+            current_film: None,
+            current_background: None,
+            current_camera_args: None,
+            current_camera_type: None,
+            current_integrator_type: None,
+            materials: Vec::new(),
+            material_names: HashMap::new(),
+            primitives: AggregatePrimitive::new(),
         }
+    }
 
-        let background = parsed_background.ok_or(SceneError::MissingComponent(
-            "missing background definition",
-        ))?;
+    pub fn execute_render(&mut self) -> Result<()> {
+        let film = self
+            .current_film
+            .clone()
+            .ok_or(SceneError::Render("cannot render without a film"))?;
 
-        let film = parsed_film.ok_or(SceneError::MissingComponent("missing film definition"))?;
+        let background = self
+            .current_background
+            .clone()
+            .ok_or(SceneError::Render("cannot render without a background"))?;
 
-        let (look_at, look_from, up) =
-            parsed_camera_args.ok_or(SceneError::MissingComponent("missing lookat definition"))?;
+        let camera_args = self
+            .current_camera_args
+            .ok_or(SceneError::Render("cannot render without lookat"))?;
 
-        let camera_type =
-            parsed_camera_type.ok_or(SceneError::MissingComponent("missing camera definition"))?;
+        let camera_type = self
+            .current_camera_type
+            .ok_or(SceneError::Render("cannot render without a camera"))?;
 
-        let camera: Box<dyn Camera> = match camera_type {
-            CameraType::Orthographic { screen_window } => Box::new(OrthographicCamera::new(
-                look_at,
-                look_from,
-                up,
-                screen_window,
-                film,
-            )),
-            CameraType::Perspective { fovy } => {
-                Box::new(PerspectiveCamera::new(look_at, look_from, up, fovy, film))
-            }
+        let camera: Camera = camera_type.to_camera(camera_args, film);
+
+        let integrator_type = self
+            .current_integrator_type
+            .ok_or(SceneError::Render("cannot render without an integrator"))?;
+
+        let scene = Scene {
+            background,
+            materials: self.materials.clone(),
+            primitives: self.primitives.clone(),
         };
 
-        Ok(Self {
-            scene: Scene {
-                background,
-                camera,
-                objects,
-            },
-        })
+        let mut integrator = integrator_type.to_integrator(camera, scene);
+
+        integrator.render()
     }
+}
 
-    pub fn render(&mut self) -> Result<()> {
-        let camera = &mut self.scene.camera;
-        let background = &self.scene.background;
+impl Default for RenderState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
-        let height = camera.film().height();
-        let width = camera.film().width();
+pub fn run(args: Cli) -> Result<()> {
+    let mut state = RenderState::new();
+    parse_from_file(&args.input_scene_file, &mut state)?;
 
-        for row in 0..height {
-            let normalized_row = row as f64 / (height - 1) as f64;
+    Ok(())
+}
 
-            for col in 0..width {
-                let normalized_col = col as f64 / (width - 1) as f64;
+fn parse_from_file(file_path: &Path, state: &mut RenderState) -> Result<()> {
+    let xml_data = fs::read_to_string(file_path)?;
 
-                let mut color = background.sample(normalized_row, normalized_col);
+    let scene = from_str::<Rt3>(&xml_data)?;
 
-                let ray = camera.generate_ray(Point2 { row, col });
+    let mut current_material = None;
 
-                for object in &self.scene.objects {
-                    if object.intersect_p(ray) {
-                        color = RGBColor {
-                            red: 255,
-                            green: 0,
-                            blue: 0,
-                        }
-                    }
-                }
+    for command in scene.commands {
+        match command {
+            SceneCommand::Film(FilmType::Image {
+                w_res,
+                h_res,
+                filename,
+                img_type,
+            }) => state.current_film = Some(Film::new(w_res, h_res, filename, img_type)),
+            SceneCommand::Background(background_type) => {
+                let background = background_type.to_background();
 
-                camera.film().add_sample(Point2 { row, col }, color);
+                state.current_background = Some(background);
+            }
+            SceneCommand::Camera(camera_type) => {
+                state.current_camera_type = Some(camera_type);
+            }
+            SceneCommand::Lookat(camera_args) => state.current_camera_args = Some(camera_args),
+            SceneCommand::Object(object_type) => {
+                let material_id = current_material
+                    .ok_or(SceneError::MissingComponent("missing material for object"))?;
+
+                state.primitives.add(object_type.to_primitive(material_id))
+            }
+            SceneCommand::Material(material_type) => {
+                let material = material_type.to_material();
+
+                let index = state.materials.len();
+                state.materials.push(material);
+
+                current_material = Some(index);
+            }
+            SceneCommand::MakeNamedMaterial {
+                name,
+                material_type,
+            } => {
+                let material = material_type.to_material();
+
+                let index = state.materials.len();
+                state.materials.push(material);
+
+                state.material_names.insert(name, index);
+            }
+            SceneCommand::NamedMaterial { name } => {
+                current_material = Some(*state.material_names.get(&name).ok_or(
+                    SceneError::MissingComponent("material `{name}` does not exist"),
+                )?);
+            }
+            SceneCommand::Integrator(integrator_type) => {
+                state.current_integrator_type = Some(integrator_type)
+            }
+            SceneCommand::WorldBegin => (),
+            SceneCommand::WorldEnd => state.execute_render()?,
+            SceneCommand::RenderAgain => state.execute_render()?,
+            SceneCommand::Include { filename } => {
+                let current_dir = file_path.parent().unwrap_or_else(|| Path::new(""));
+
+                let resolved_path = current_dir.join(filename);
+
+                parse_from_file(&resolved_path, state)?;
             }
         }
-
-        camera.film().write_image()?;
-
-        Ok(())
     }
+
+    Ok(())
 }

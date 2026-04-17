@@ -9,14 +9,15 @@ use serde::Deserialize;
 use crate::Result;
 use crate::{RGBColor, math::Point2};
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
-pub(crate) enum ImageType {
+pub enum ImageType {
     Ppm,
     Png,
 }
 
-pub(crate) struct Film {
+#[derive(Debug, Clone)]
+pub struct Film {
     width: u16,
     height: u16,
     filename: PathBuf,
@@ -33,7 +34,7 @@ impl Film {
         Self {
             width,
             height,
-            filename: filename.into(),
+            filename,
             img_type,
             buffer,
         }

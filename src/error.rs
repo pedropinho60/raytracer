@@ -15,6 +15,9 @@ pub enum SceneError {
     #[error("Invalid scene definition: {0}")]
     MissingComponent(&'static str),
 
+    #[error("Error while rendering: {0}")]
+    Render(&'static str),
+
     #[error("Failed to encode PNG")]
     PngEncoding(#[from] png::EncodingError),
 }

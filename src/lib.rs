@@ -7,19 +7,22 @@ mod camera;
 mod cli;
 mod error;
 mod film;
+mod integrator;
+mod material;
 mod math;
-mod object;
 mod parse;
+mod primitive;
 mod ray;
 mod scene;
+mod surfel;
 
-pub use api::Api;
+pub use api::run;
 pub use cli::Cli;
 pub use error::Result;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default, Pod, Zeroable)]
-pub(crate) struct RGBColor {
+pub struct RGBColor {
     pub red: u8,
     pub green: u8,
     pub blue: u8,
@@ -49,7 +52,7 @@ impl<'de> Deserialize<'de> for RGBColor {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct WindowSize {
+pub struct WindowSize {
     pub left: f64,
     pub right: f64,
     pub bottom: f64,

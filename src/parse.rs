@@ -4,8 +4,14 @@ use serde::{Deserialize, Deserializer};
 
 use crate::{
     RGBColor, WindowSize,
-    film::ImageType,
+    background::{Background, GradientBackground, SingleColorBackground},
+    camera::{Camera, OrthographicCamera, PerspectiveCamera},
+    film::{Film, ImageType},
+    integrator::{Integrator, NormalMapIntegrator, RayCastIntegrator},
+    material::Material,
     math::{Point3, Vec3},
+    primitive::{Primitive, Sphere},
+    scene::Scene,
 };
 
 fn parse_number<'de, T, D>(deserializer: D) -> Result<T, D::Error>
@@ -28,28 +34,42 @@ pub struct Rt3 {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SceneCommand {
-    Lookat {
-        #[serde(rename = "@look_from")]
-        look_from: Point3,
-        #[serde(rename = "@look_at")]
-        look_at: Point3,
-        #[serde(rename = "@up")]
-        up: Vec3,
-    },
+    Lookat(CameraArgs),
     Camera(CameraType),
-    Integrator {
-        #[serde(rename = "@type")]
-        _integrator_type: String,
-    },
+    Integrator(IntegratorType),
     Film(FilmType),
     WorldBegin,
+    MakeNamedMaterial {
+        #[serde(rename = "@name")]
+        name: String,
+        material_type: MaterialType,
+    },
+    NamedMaterial {
+        #[serde(rename = "@name")]
+        name: String,
+    },
     Material(MaterialType),
     Object(ObjectType),
     Background(BackgroundType),
     WorldEnd,
+    RenderAgain,
+    Include {
+        #[serde(rename = "@filename")]
+        filename: PathBuf,
+    },
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Copy, Deserialize)]
+pub struct CameraArgs {
+    #[serde(rename = "@look_from")]
+    pub look_from: Point3,
+    #[serde(rename = "@look_at")]
+    pub look_at: Point3,
+    #[serde(rename = "@up")]
+    pub up: Vec3,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(tag = "@type")]
 pub enum CameraType {
     #[serde(rename = "orthographic")]
@@ -64,14 +84,33 @@ pub enum CameraType {
     },
 }
 
+impl CameraType {
+    pub fn to_camera(self, camera_args: CameraArgs, film: Film) -> Camera {
+        let CameraArgs {
+            look_from,
+            look_at,
+            up,
+        } = camera_args;
+
+        match self {
+            CameraType::Orthographic { screen_window } => {
+                OrthographicCamera::new(look_from, look_at, up, screen_window, film).into()
+            }
+            CameraType::Perspective { fovy } => {
+                PerspectiveCamera::new(look_from, look_at, up, fovy, film).into()
+            }
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(tag = "@type")]
 pub enum FilmType {
     #[serde(rename = "image")]
     Image {
-        #[serde(rename = "@w_res", deserialize_with = "parse_number")]
+        #[serde(rename = "@w_res", alias = "@x_res", deserialize_with = "parse_number")]
         w_res: u16,
-        #[serde(rename = "@h_res", deserialize_with = "parse_number")]
+        #[serde(rename = "@h_res", alias = "@y_res", deserialize_with = "parse_number")]
         h_res: u16,
         #[serde(rename = "@filename")]
         filename: PathBuf,
@@ -80,7 +119,7 @@ pub enum FilmType {
     },
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(tag = "@type")]
 pub enum BackgroundType {
     #[serde(rename = "single_color")]
@@ -88,7 +127,7 @@ pub enum BackgroundType {
         #[serde(rename = "@color")]
         color: RGBColor,
     },
-    #[serde(rename = "4_colors")]
+    #[serde(rename = "4_colors", alias = "colors")]
     FourColors {
         #[serde(rename = "@bl")]
         bl: RGBColor,
@@ -101,7 +140,18 @@ pub enum BackgroundType {
     },
 }
 
-#[derive(Debug, Deserialize)]
+impl BackgroundType {
+    pub fn to_background(self) -> Background {
+        match self {
+            BackgroundType::SingleColor { color } => SingleColorBackground::new(color).into(),
+            BackgroundType::FourColors { bl, tl, tr, br } => {
+                GradientBackground::new(tl, tr, bl, br).into()
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(tag = "@type")]
 pub enum ObjectType {
     #[serde(rename = "sphere")]
@@ -113,12 +163,48 @@ pub enum ObjectType {
     },
 }
 
-#[derive(Debug, Deserialize)]
+impl ObjectType {
+    pub fn to_primitive(self, material_id: usize) -> Primitive {
+        match self {
+            ObjectType::Sphere { center, radius } => {
+                Primitive::new(Sphere { center, radius }.into(), material_id)
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(tag = "@type")]
 pub enum MaterialType {
     #[serde(rename = "flat")]
     Flat {
         #[serde(rename = "@color")]
-        color: String,
+        color: RGBColor,
     },
+}
+
+impl MaterialType {
+    pub fn to_material(self) -> Material {
+        match self {
+            MaterialType::Flat { color } => Material::Flat { kd: color },
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(tag = "@type")]
+pub enum IntegratorType {
+    #[serde(rename = "flat")]
+    Flat,
+    #[serde(rename = "normal_map")]
+    NormalMap,
+}
+
+impl IntegratorType {
+    pub fn to_integrator(self, camera: Camera, scene: Scene) -> Integrator {
+        match self {
+            IntegratorType::Flat => RayCastIntegrator::new(camera, scene).into(),
+            IntegratorType::NormalMap => NormalMapIntegrator::new(camera, scene).into(),
+        }
+    }
 }

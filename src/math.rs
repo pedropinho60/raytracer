@@ -3,7 +3,7 @@ use std::ops::{Add, Div, Mul, Neg, Sub};
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Point2 {
+pub struct Point2 {
     pub row: u16,
     pub col: u16,
 }
