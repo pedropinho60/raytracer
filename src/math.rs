@@ -39,6 +39,30 @@ impl Sub<Point3> for Point3 {
     }
 }
 
+impl Mul<f64> for Point3 {
+    type Output = Point3;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        Point3 {
+            x: self.x * rhs,
+            y: self.y * rhs,
+            z: self.z * rhs,
+        }
+    }
+}
+
+impl Div<f64> for Point3 {
+    type Output = Point3;
+
+    fn div(self, rhs: f64) -> Self::Output {
+        Point3 {
+            x: self.x / rhs,
+            y: self.y / rhs,
+            z: self.z / rhs,
+        }
+    }
+}
+
 impl<'de> Deserialize<'de> for Point3 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

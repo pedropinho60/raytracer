@@ -4,7 +4,6 @@ use crate::{
     RGBColor,
     camera::Camera,
     error::Result,
-    material::Material,
     math::{Point2, Vec3},
     ray::Ray,
     scene::Scene,
@@ -115,7 +114,7 @@ impl RayCastIntegrator {
 
         let material = self.scene.get_material(isect.material_id);
 
-        material.map(|&Material::Flat { kd }| kd)
+        material.map(|m| m.color_at(isect.p))
     }
 }
 

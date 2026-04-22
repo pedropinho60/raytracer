@@ -8,7 +8,7 @@ use crate::{
     camera::{Camera, OrthographicCamera, PerspectiveCamera},
     film::{Film, ImageType},
     integrator::{Integrator, NormalMapIntegrator, RayCastIntegrator},
-    material::Material,
+    material::{CheckerboardMaterial, Material},
     math::{Point3, Vec3},
     primitive::{Plane, Primitive, Sphere},
     scene::Scene,
@@ -191,12 +191,26 @@ pub enum MaterialType {
         #[serde(rename = "@color")]
         color: RGBColor,
     },
+    #[serde(rename = "checkerboard")]
+    Checkerboard {
+        #[serde(rename = "@color_a")]
+        color_a: RGBColor,
+        #[serde(rename = "@color_b")]
+        color_b: RGBColor,
+        #[serde(rename = "@scale", deserialize_with = "parse_number")]
+        scale: f64,
+    },
 }
 
 impl MaterialType {
     pub fn to_material(self) -> Material {
         match self {
             MaterialType::Flat { color } => Material::Flat { kd: color },
+            MaterialType::Checkerboard {
+                color_a,
+                color_b,
+                scale,
+            } => CheckerboardMaterial::new(color_a, color_b, scale).into(),
         }
     }
 }
