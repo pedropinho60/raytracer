@@ -170,3 +170,13 @@ impl AggregatePrimitive {
         closest_hit
     }
 }
+
+impl IntoIterator for AggregatePrimitive {
+    type Item = Primitive;
+
+    type IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.primitives.into_iter()
+    }
+}
