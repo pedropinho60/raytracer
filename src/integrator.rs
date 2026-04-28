@@ -12,6 +12,8 @@ use crate::{
     scene::Scene,
 };
 
+use rayon::prelude::*;
+
 #[derive(From)]
 pub enum Integrator {
     Sampler(SamplerIntegrator),
@@ -54,24 +56,34 @@ impl SamplerIntegrator {
     pub fn render(&mut self, camera: &mut Camera, scene: &Scene, film: &mut Film) -> Result<()> {
         self.preprocess();
 
-        let height = film.height();
         let width = film.width();
+        let height = film.height();
 
-        for row in 0..height {
-            let normalized_row = row as f64 / (height - 1) as f64;
+        let pixels = film.pixels_mut();
 
-            for col in 0..width {
+        pixels
+            .par_iter_mut()
+            .enumerate()
+            .for_each(|(index, color)| {
+                let col = index % width as usize;
+                let row = index / width as usize;
+
+                let ray = camera.generate_ray(
+                    Point2 {
+                        row: row as u16,
+                        col: col as u16,
+                    },
+                    width,
+                    height,
+                );
+
+                let normalized_row = row as f64 / (height - 1) as f64;
                 let normalized_col = col as f64 / (width - 1) as f64;
 
-                let ray = camera.generate_ray(Point2 { row, col }, film);
-
-                let color = self
+                *color = self
                     .li(ray, scene)
                     .unwrap_or_else(|| scene.background.sample(normalized_row, normalized_col));
-
-                film.add_sample(Point2 { row, col }, color);
-            }
-        }
+            });
 
         film.write_image()?;
 

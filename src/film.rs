@@ -7,7 +7,7 @@ use std::{
 use serde::Deserialize;
 
 use crate::Result;
-use crate::{color::Color, math::Point2};
+use crate::color::Color;
 
 #[derive(Debug, Clone, Copy, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -54,9 +54,8 @@ impl Film {
         self.height
     }
 
-    pub fn add_sample(&mut self, point: Point2, color: Color) {
-        let index = point.row as usize * self.width as usize + point.col as usize;
-        self.buffer[index] = color;
+    pub fn pixels_mut(&mut self) -> &mut [Color] {
+        &mut self.buffer
     }
 
     pub fn write_image(&self) -> Result<()> {

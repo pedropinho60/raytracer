@@ -2,7 +2,7 @@
     <lookat look_from="-5 4.5 -15" look_at="0 0 1" up="0 1 0" />
     <camera type="perspective" fovy="45" /> 
     <integrator type="blinn_phong" depth="1" />
-    <film type="image" w_res="1920" h_res="1080" filename="all_lights.png" img_type="png" gamma_corrected="true" />
+    <film type="image" w_res="3840" h_res="2160" filename="all_lights.png" img_type="png" gamma_corrected="true" />
 
     <!-- Objects storage -->
     <aggregator type="list"/>

@@ -81,7 +81,9 @@ impl RenderState {
 
         let mut integrator = integrator_type.to_integrator();
 
-        integrator.render(&mut camera, &scene, &mut film)
+        integrator.render(&mut camera, &scene, &mut film)?;
+
+        Ok(())
     }
 }
 

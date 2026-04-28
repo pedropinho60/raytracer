@@ -2,7 +2,6 @@ use derive_more::From;
 
 use crate::{
     WindowSize,
-    film::Film,
     math::{Point2, Point3, Vec3},
     ray::Ray,
 };
@@ -14,10 +13,10 @@ pub enum Camera {
 }
 
 impl Camera {
-    pub fn generate_ray(&self, point: Point2, film: &Film) -> Ray {
+    pub fn generate_ray(&self, point: Point2, width: u16, height: u16) -> Ray {
         match self {
-            Camera::Perspective(inner) => inner.generate_ray(point, film),
-            Camera::Orthographic(inner) => inner.generate_ray(point, film),
+            Camera::Perspective(inner) => inner.generate_ray(point, width, height),
+            Camera::Orthographic(inner) => inner.generate_ray(point, width, height),
         }
     }
 }
@@ -39,9 +38,9 @@ impl PerspectiveCamera {
         }
     }
 
-    pub fn generate_ray(&self, point: Point2, film: &Film) -> Ray {
-        let width = film.width() as f64;
-        let height = film.height() as f64;
+    pub fn generate_ray(&self, point: Point2, width: u16, height: u16) -> Ray {
+        let width = width as f64;
+        let height = height as f64;
 
         let h = (self.fovy as f64 / 2.0).to_radians().tan();
 
@@ -83,9 +82,9 @@ impl OrthographicCamera {
         }
     }
 
-    pub fn generate_ray(&self, point: Point2, film: &Film) -> Ray {
-        let width = film.width() as f64;
-        let height = film.height() as f64;
+    pub fn generate_ray(&self, point: Point2, width: u16, height: u16) -> Ray {
+        let width = width as f64;
+        let height = height as f64;
 
         let left = self.dimensions.left;
         let right = self.dimensions.right;
