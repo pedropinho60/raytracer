@@ -7,13 +7,12 @@ use crate::{
     background::{Background, GradientBackground, SingleColorBackground},
     camera::{Camera, OrthographicCamera, PerspectiveCamera},
     color::{Color, ColorU8},
-    film::{Film, ImageType},
+    film::ImageType,
     integrator::{BlinnPhongIntegrator, Integrator, NormalMapIntegrator, RayCastIntegrator},
     light::{AmbientLight, DirectionalLight, Light, PointLight},
     material::{BlinnPhongMaterial, CheckerboardMaterial, Material},
     math::{Point3, Vec3},
     primitive::{Plane, Primitive, Sphere},
-    scene::Scene,
 };
 
 fn parse_number<'de, T, D>(deserializer: D) -> Result<T, D::Error>
@@ -93,7 +92,7 @@ pub enum CameraType {
 }
 
 impl CameraType {
-    pub fn to_camera(self, camera_args: CameraArgs, film: Film) -> Camera {
+    pub fn to_camera(self, camera_args: CameraArgs) -> Camera {
         let CameraArgs {
             look_from,
             look_at,
@@ -102,10 +101,10 @@ impl CameraType {
 
         match self {
             CameraType::Orthographic { screen_window } => {
-                OrthographicCamera::new(look_from, look_at, up, screen_window, film).into()
+                OrthographicCamera::new(look_from, look_at, up, screen_window).into()
             }
             CameraType::Perspective { fovy } => {
-                PerspectiveCamera::new(look_from, look_at, up, fovy, film).into()
+                PerspectiveCamera::new(look_from, look_at, up, fovy).into()
             }
         }
     }
@@ -315,11 +314,11 @@ pub enum IntegratorType {
 }
 
 impl IntegratorType {
-    pub fn to_integrator(self, camera: Camera, scene: Scene) -> Integrator {
+    pub fn to_integrator(self) -> Integrator {
         match self {
-            IntegratorType::Flat => RayCastIntegrator::new(camera, scene).into(),
-            IntegratorType::NormalMap => NormalMapIntegrator::new(camera, scene).into(),
-            IntegratorType::BlinnPhong => BlinnPhongIntegrator::new(camera, scene).into(),
+            IntegratorType::Flat => RayCastIntegrator.into(),
+            IntegratorType::NormalMap => NormalMapIntegrator.into(),
+            IntegratorType::BlinnPhong => BlinnPhongIntegrator.into(),
         }
     }
 }

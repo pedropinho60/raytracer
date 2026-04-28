@@ -14,17 +14,10 @@ pub enum Camera {
 }
 
 impl Camera {
-    pub fn generate_ray(&self, point: Point2) -> Ray {
+    pub fn generate_ray(&self, point: Point2, film: &Film) -> Ray {
         match self {
-            Camera::Perspective(inner) => inner.generate_ray(point),
-            Camera::Orthographic(inner) => inner.generate_ray(point),
-        }
-    }
-
-    pub fn film(&mut self) -> &mut Film {
-        match self {
-            Camera::Perspective(inner) => &mut inner.film,
-            Camera::Orthographic(inner) => &mut inner.film,
+            Camera::Perspective(inner) => inner.generate_ray(point, film),
+            Camera::Orthographic(inner) => inner.generate_ray(point, film),
         }
     }
 }
@@ -34,23 +27,21 @@ pub struct PerspectiveCamera {
     look_at: Point3,
     up: Vec3,
     fovy: u16,
-    film: Film,
 }
 
 impl PerspectiveCamera {
-    pub fn new(look_from: Point3, look_at: Point3, up: Vec3, fovy: u16, film: Film) -> Self {
+    pub fn new(look_from: Point3, look_at: Point3, up: Vec3, fovy: u16) -> Self {
         Self {
             look_from,
             look_at,
             up,
             fovy,
-            film,
         }
     }
 
-    pub fn generate_ray(&self, point: Point2) -> Ray {
-        let width = self.film.width() as f64;
-        let height = self.film.height() as f64;
+    pub fn generate_ray(&self, point: Point2, film: &Film) -> Ray {
+        let width = film.width() as f64;
+        let height = film.height() as f64;
 
         let h = (self.fovy as f64 / 2.0).to_radians().tan();
 
@@ -80,29 +71,21 @@ pub struct OrthographicCamera {
     look_at: Point3,
     up: Vec3,
     dimensions: WindowSize,
-    film: Film,
 }
 
 impl OrthographicCamera {
-    pub fn new(
-        look_from: Point3,
-        look_at: Point3,
-        up: Vec3,
-        dimensions: WindowSize,
-        film: Film,
-    ) -> Self {
+    pub fn new(look_from: Point3, look_at: Point3, up: Vec3, dimensions: WindowSize) -> Self {
         Self {
             look_from,
             look_at,
             up,
-            film,
             dimensions,
         }
     }
 
-    pub fn generate_ray(&self, point: Point2) -> Ray {
-        let width = self.film.width() as f64;
-        let height = self.film.height() as f64;
+    pub fn generate_ray(&self, point: Point2, film: &Film) -> Ray {
+        let width = film.width() as f64;
+        let height = film.height() as f64;
 
         let left = self.dimensions.left;
         let right = self.dimensions.right;

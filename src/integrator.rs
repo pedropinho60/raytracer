@@ -4,6 +4,7 @@ use crate::{
     camera::Camera,
     color::Color,
     error::Result,
+    film::Film,
     light::Light,
     material::Material,
     math::{Point2, Vec3},
@@ -17,9 +18,9 @@ pub enum Integrator {
 }
 
 impl Integrator {
-    pub fn render(&mut self) -> Result<()> {
+    pub fn render(&mut self, camera: &mut Camera, scene: &Scene, film: &mut Film) -> Result<()> {
         match self {
-            Integrator::Sampler(inner) => inner.render(),
+            Integrator::Sampler(inner) => inner.render(camera, scene, film),
         }
     }
 }
@@ -50,11 +51,11 @@ pub enum SamplerIntegrator {
 }
 
 impl SamplerIntegrator {
-    pub fn render(&mut self) -> Result<()> {
+    pub fn render(&mut self, camera: &mut Camera, scene: &Scene, film: &mut Film) -> Result<()> {
         self.preprocess();
 
-        let height = self.camera().film().height();
-        let width = self.camera().film().width();
+        let height = film.height();
+        let width = film.width();
 
         for row in 0..height {
             let normalized_row = row as f64 / (height - 1) as f64;
@@ -62,28 +63,26 @@ impl SamplerIntegrator {
             for col in 0..width {
                 let normalized_col = col as f64 / (width - 1) as f64;
 
-                let ray = self.camera().generate_ray(Point2 { row, col });
+                let ray = camera.generate_ray(Point2 { row, col }, film);
 
-                let color = self.li(ray).unwrap_or_else(|| {
-                    self.scene()
-                        .background
-                        .sample(normalized_row, normalized_col)
-                });
+                let color = self
+                    .li(ray, scene)
+                    .unwrap_or_else(|| scene.background.sample(normalized_row, normalized_col));
 
-                self.camera().film().add_sample(Point2 { row, col }, color);
+                film.add_sample(Point2 { row, col }, color);
             }
         }
 
-        self.camera().film().write_image()?;
+        film.write_image()?;
 
         Ok(())
     }
 
-    fn li(&self, ray: Ray) -> Option<Color> {
+    fn li(&self, ray: Ray, scene: &Scene) -> Option<Color> {
         match self {
-            SamplerIntegrator::RayCast(inner) => inner.li(ray),
-            SamplerIntegrator::NormalMap(inner) => inner.li(ray),
-            SamplerIntegrator::BlinnPhong(inner) => inner.li(ray),
+            SamplerIntegrator::RayCast(inner) => inner.li(ray, scene),
+            SamplerIntegrator::NormalMap(inner) => inner.li(ray, scene),
+            SamplerIntegrator::BlinnPhong(inner) => inner.li(ray, scene),
         }
     }
 
@@ -94,38 +93,15 @@ impl SamplerIntegrator {
             SamplerIntegrator::BlinnPhong(_) => (),
         }
     }
-
-    fn camera(&mut self) -> &mut Camera {
-        match self {
-            SamplerIntegrator::RayCast(inner) => &mut inner.camera,
-            SamplerIntegrator::NormalMap(inner) => &mut inner.camera,
-            SamplerIntegrator::BlinnPhong(inner) => &mut inner.camera,
-        }
-    }
-
-    fn scene(&self) -> &Scene {
-        match self {
-            SamplerIntegrator::RayCast(inner) => &inner.scene,
-            SamplerIntegrator::NormalMap(inner) => &inner.scene,
-            SamplerIntegrator::BlinnPhong(inner) => &inner.scene,
-        }
-    }
 }
 
-pub struct RayCastIntegrator {
-    camera: Camera,
-    scene: Scene,
-}
+pub struct RayCastIntegrator;
 
 impl RayCastIntegrator {
-    pub fn new(camera: Camera, scene: Scene) -> Self {
-        Self { camera, scene }
-    }
+    fn li(&self, ray: Ray, scene: &Scene) -> Option<Color> {
+        let isect = scene.intersect(ray)?;
 
-    fn li(&self, ray: Ray) -> Option<Color> {
-        let isect = self.scene.intersect(ray)?;
-
-        let material = self.scene.get_material(isect.material_id)?;
+        let material = scene.get_material(isect.material_id)?;
 
         match material {
             Material::Flat { kd } => Some(*kd),
@@ -135,18 +111,11 @@ impl RayCastIntegrator {
     }
 }
 
-pub struct NormalMapIntegrator {
-    camera: Camera,
-    scene: Scene,
-}
+pub struct NormalMapIntegrator;
 
 impl NormalMapIntegrator {
-    pub fn new(camera: Camera, scene: Scene) -> Self {
-        Self { camera, scene }
-    }
-
-    pub fn li(&self, ray: Ray) -> Option<Color> {
-        let isect = self.scene.intersect(ray)?;
+    pub fn li(&self, ray: Ray, scene: &Scene) -> Option<Color> {
+        let isect = scene.intersect(ray)?;
 
         let mut normal = if isect.from_behind {
             isect.normal
@@ -168,24 +137,17 @@ impl NormalMapIntegrator {
     }
 }
 
-pub struct BlinnPhongIntegrator {
-    camera: Camera,
-    scene: Scene,
-}
+pub struct BlinnPhongIntegrator;
 
 impl BlinnPhongIntegrator {
-    pub fn new(camera: Camera, scene: Scene) -> Self {
-        Self { camera, scene }
-    }
-
-    pub fn li(&self, ray: Ray) -> Option<Color> {
-        let isect = self.scene.intersect(ray)?;
+    pub fn li(&self, ray: Ray, scene: &Scene) -> Option<Color> {
+        let isect = scene.intersect(ray)?;
 
         if isect.from_behind {
             return None;
         }
 
-        let material = self.scene.get_material(isect.material_id)?;
+        let material = scene.get_material(isect.material_id)?;
 
         let Material::BlinnPhong(m) = material else {
             return None;
@@ -201,7 +163,7 @@ impl BlinnPhongIntegrator {
 
         let mut color = Color::default();
 
-        for light in &self.scene.lights {
+        for light in &scene.lights {
             let (l, i) = match light {
                 Light::Ambient(ambient_light) => {
                     color += ambient_light.intensity * ka;

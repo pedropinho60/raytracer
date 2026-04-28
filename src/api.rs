@@ -48,7 +48,7 @@ impl RenderState {
     }
 
     pub fn execute_render(&mut self) -> Result<()> {
-        let film = self
+        let mut film = self
             .current_film
             .clone()
             .ok_or(SceneError::Render("cannot render without a film"))?;
@@ -66,7 +66,7 @@ impl RenderState {
             .current_camera_type
             .ok_or(SceneError::Render("cannot render without a camera"))?;
 
-        let camera: Camera = camera_type.to_camera(camera_args, film);
+        let mut camera: Camera = camera_type.to_camera(camera_args);
 
         let integrator_type = self
             .current_integrator_type
@@ -79,9 +79,9 @@ impl RenderState {
             lights: self.lights.clone(),
         };
 
-        let mut integrator = integrator_type.to_integrator(camera, scene);
+        let mut integrator = integrator_type.to_integrator();
 
-        integrator.render()
+        integrator.render(&mut camera, &scene, &mut film)
     }
 }
 
