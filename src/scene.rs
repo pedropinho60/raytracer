@@ -1,12 +1,13 @@
 use crate::{
-    background::Background, material::Material, primitive::AggregatePrimitive, ray::Ray,
-    surfel::Surfel,
+    background::Background, light::Light, material::Material, primitive::AggregatePrimitive,
+    ray::Ray, surfel::Surfel,
 };
 
 pub struct Scene {
     pub background: Background,
     pub materials: Vec<Material>,
     pub primitives: AggregatePrimitive,
+    pub lights: Vec<Light>,
 }
 
 impl Scene {

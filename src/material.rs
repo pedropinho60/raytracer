@@ -1,31 +1,23 @@
 use derive_more::From;
 
-use crate::{RGBColor, math::Point3};
+use crate::{color::Color, math::Point3};
 
 #[derive(Clone, From)]
 pub enum Material {
-    Flat { kd: RGBColor },
+    Flat { kd: Color },
     Checkerboard(CheckerboardMaterial),
-}
-
-impl Material {
-    pub fn color_at(&self, point: Point3) -> RGBColor {
-        match self {
-            Material::Flat { kd } => *kd,
-            Material::Checkerboard(checkerboard_material) => checkerboard_material.color_at(point),
-        }
-    }
+    BlinnPhong(BlinnPhongMaterial),
 }
 
 #[derive(Clone)]
 pub struct CheckerboardMaterial {
-    color_a: RGBColor,
-    color_b: RGBColor,
+    color_a: Color,
+    color_b: Color,
     scale: f64,
 }
 
 impl CheckerboardMaterial {
-    pub fn new(color_a: RGBColor, color_b: RGBColor, scale: f64) -> Self {
+    pub fn new(color_a: Color, color_b: Color, scale: f64) -> Self {
         Self {
             color_a,
             color_b,
@@ -33,7 +25,7 @@ impl CheckerboardMaterial {
         }
     }
 
-    pub fn color_at(&self, point: Point3) -> RGBColor {
+    pub fn color_at(&self, point: Point3) -> Color {
         let scaled_point = point / self.scale;
 
         let ix = scaled_point.x.floor() as i64;
@@ -44,6 +36,25 @@ impl CheckerboardMaterial {
             self.color_a
         } else {
             self.color_b
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct BlinnPhongMaterial {
+    pub diffuse: Color,
+    pub specular: Color,
+    pub glossiness: f64,
+    pub ambient: Color,
+}
+
+impl BlinnPhongMaterial {
+    pub fn new(diffuse: Color, specular: Color, glossiness: f64, ambient: Color) -> Self {
+        Self {
+            diffuse,
+            specular,
+            glossiness,
+            ambient,
         }
     }
 }

@@ -2,6 +2,7 @@ use crate::{
     camera::Camera,
     cli::Cli,
     error::SceneError,
+    light::Light,
     material::Material,
     parse::{CameraArgs, CameraType, IntegratorType},
     primitive::AggregatePrimitive,
@@ -28,6 +29,7 @@ pub struct RenderState {
     pub materials: Vec<Material>,
     pub material_names: HashMap<String, usize>,
     pub primitives: AggregatePrimitive,
+    pub lights: Vec<Light>,
 }
 
 impl RenderState {
@@ -41,6 +43,7 @@ impl RenderState {
             materials: Vec::new(),
             material_names: HashMap::new(),
             primitives: AggregatePrimitive::new(),
+            lights: Vec::new(),
         }
     }
 
@@ -73,6 +76,7 @@ impl RenderState {
             background,
             materials: self.materials.clone(),
             primitives: self.primitives.clone(),
+            lights: self.lights.clone(),
         };
 
         let mut integrator = integrator_type.to_integrator(camera, scene);
@@ -108,7 +112,11 @@ fn parse_from_file(file_path: &Path, state: &mut RenderState) -> Result<()> {
                 h_res,
                 filename,
                 img_type,
-            }) => state.current_film = Some(Film::new(w_res, h_res, filename, img_type)),
+                gamma_corrected,
+            }) => {
+                state.current_film =
+                    Some(Film::new(w_res, h_res, filename, img_type, gamma_corrected))
+            }
             SceneCommand::Background(background_type) => {
                 let background = background_type.to_background();
 
@@ -161,6 +169,8 @@ fn parse_from_file(file_path: &Path, state: &mut RenderState) -> Result<()> {
 
                 parse_from_file(&resolved_path, state)?;
             }
+            SceneCommand::LightSource(light_type) => state.lights.push(light_type.to_light()),
+            SceneCommand::Aggregator { ty: _ty } => (),
         }
     }
 

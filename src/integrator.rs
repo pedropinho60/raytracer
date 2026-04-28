@@ -1,9 +1,11 @@
 use derive_more::From;
 
 use crate::{
-    RGBColor,
     camera::Camera,
+    color::Color,
     error::Result,
+    light::Light,
+    material::Material,
     math::{Point2, Vec3},
     ray::Ray,
     scene::Scene,
@@ -34,10 +36,17 @@ impl From<NormalMapIntegrator> for Integrator {
     }
 }
 
+impl From<BlinnPhongIntegrator> for Integrator {
+    fn from(value: BlinnPhongIntegrator) -> Self {
+        Integrator::from(SamplerIntegrator::from(value))
+    }
+}
+
 #[derive(From)]
 pub enum SamplerIntegrator {
     RayCast(RayCastIntegrator),
     NormalMap(NormalMapIntegrator),
+    BlinnPhong(BlinnPhongIntegrator),
 }
 
 impl SamplerIntegrator {
@@ -70,10 +79,11 @@ impl SamplerIntegrator {
         Ok(())
     }
 
-    fn li(&self, ray: Ray) -> Option<RGBColor> {
+    fn li(&self, ray: Ray) -> Option<Color> {
         match self {
             SamplerIntegrator::RayCast(inner) => inner.li(ray),
             SamplerIntegrator::NormalMap(inner) => inner.li(ray),
+            SamplerIntegrator::BlinnPhong(inner) => inner.li(ray),
         }
     }
 
@@ -81,6 +91,7 @@ impl SamplerIntegrator {
         match self {
             SamplerIntegrator::RayCast(_) => (),
             SamplerIntegrator::NormalMap(_) => (),
+            SamplerIntegrator::BlinnPhong(_) => (),
         }
     }
 
@@ -88,6 +99,7 @@ impl SamplerIntegrator {
         match self {
             SamplerIntegrator::RayCast(inner) => &mut inner.camera,
             SamplerIntegrator::NormalMap(inner) => &mut inner.camera,
+            SamplerIntegrator::BlinnPhong(inner) => &mut inner.camera,
         }
     }
 
@@ -95,6 +107,7 @@ impl SamplerIntegrator {
         match self {
             SamplerIntegrator::RayCast(inner) => &inner.scene,
             SamplerIntegrator::NormalMap(inner) => &inner.scene,
+            SamplerIntegrator::BlinnPhong(inner) => &inner.scene,
         }
     }
 }
@@ -109,12 +122,16 @@ impl RayCastIntegrator {
         Self { camera, scene }
     }
 
-    fn li(&self, ray: Ray) -> Option<RGBColor> {
+    fn li(&self, ray: Ray) -> Option<Color> {
         let isect = self.scene.intersect(ray)?;
 
-        let material = self.scene.get_material(isect.material_id);
+        let material = self.scene.get_material(isect.material_id)?;
 
-        material.map(|m| m.color_at(isect.p))
+        match material {
+            Material::Flat { kd } => Some(*kd),
+            Material::Checkerboard(inner) => Some(inner.color_at(isect.point)),
+            _ => None,
+        }
     }
 }
 
@@ -128,20 +145,85 @@ impl NormalMapIntegrator {
         Self { camera, scene }
     }
 
-    pub fn li(&self, ray: Ray) -> Option<RGBColor> {
+    pub fn li(&self, ray: Ray) -> Option<Color> {
         let isect = self.scene.intersect(ray)?;
 
-        let normal = isect.n
-            + Vec3 {
-                x: 1.0,
-                y: 1.0,
-                z: 1.0,
-            } / 2.0;
+        let mut normal = if isect.from_behind {
+            isect.normal
+        } else {
+            -isect.normal
+        };
 
-        Some(RGBColor {
-            red: (normal.x * 255.0) as u8,
-            green: (normal.y * 255.0) as u8,
-            blue: (normal.z * 255.0) as u8,
+        normal += Vec3 {
+            x: 1.0,
+            y: 1.0,
+            z: 1.0,
+        } / 2.0;
+
+        Some(Color {
+            red: normal.x,
+            green: normal.y,
+            blue: normal.z,
         })
+    }
+}
+
+pub struct BlinnPhongIntegrator {
+    camera: Camera,
+    scene: Scene,
+}
+
+impl BlinnPhongIntegrator {
+    pub fn new(camera: Camera, scene: Scene) -> Self {
+        Self { camera, scene }
+    }
+
+    pub fn li(&self, ray: Ray) -> Option<Color> {
+        let isect = self.scene.intersect(ray)?;
+
+        if isect.from_behind {
+            return None;
+        }
+
+        let material = self.scene.get_material(isect.material_id)?;
+
+        let Material::BlinnPhong(m) = material else {
+            return None;
+        };
+
+        let kd = m.diffuse;
+        let ks = m.specular;
+        let g = m.glossiness;
+        let ka = m.ambient;
+
+        let v = -ray.direction.normalize();
+        let n = isect.normal.normalize();
+
+        let mut color = Color::default();
+
+        for light in &self.scene.lights {
+            let (l, i) = match light {
+                Light::Ambient(ambient_light) => {
+                    color += ambient_light.intensity * ka;
+                    continue;
+                }
+                Light::Point(point_light) => (
+                    (point_light.point - isect.point).normalize(),
+                    point_light.intensity,
+                ),
+                Light::Directional(directional_light) => {
+                    (-directional_light.direction, directional_light.intensity)
+                }
+            };
+
+            let h = (v + l).normalize();
+
+            let diffuse_term = i * kd * f64::max(n.dot(l), 0.0);
+            let specular_term = i * ks * f64::max(n.dot(h), 0.0).powf(g);
+
+            color += diffuse_term + specular_term;
+        }
+
+        Some(color)
     }
 }

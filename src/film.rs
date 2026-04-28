@@ -7,7 +7,7 @@ use std::{
 use serde::Deserialize;
 
 use crate::Result;
-use crate::{RGBColor, math::Point2};
+use crate::{color::Color, math::Point2};
 
 #[derive(Debug, Clone, Copy, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -22,14 +22,19 @@ pub struct Film {
     height: u16,
     filename: PathBuf,
     img_type: ImageType,
-    buffer: Vec<RGBColor>,
+    buffer: Vec<Color>,
+    gamma_corrected: bool,
 }
 
 impl Film {
-    const MAX_CHANNEL_VALUE: u8 = u8::MAX;
-
-    pub fn new(width: u16, height: u16, filename: PathBuf, img_type: ImageType) -> Self {
-        let buffer = vec![RGBColor::default(); width as usize * height as usize];
+    pub fn new(
+        width: u16,
+        height: u16,
+        filename: PathBuf,
+        img_type: ImageType,
+        gamma_corrected: bool,
+    ) -> Self {
+        let buffer = vec![Color::default(); width as usize * height as usize];
 
         Self {
             width,
@@ -37,6 +42,7 @@ impl Film {
             filename,
             img_type,
             buffer,
+            gamma_corrected,
         }
     }
 
@@ -48,7 +54,7 @@ impl Film {
         self.height
     }
 
-    pub fn add_sample(&mut self, point: Point2, color: RGBColor) {
+    pub fn add_sample(&mut self, point: Point2, color: Color) {
         let index = point.row as usize * self.width as usize + point.col as usize;
         self.buffer[index] = color;
     }
@@ -57,32 +63,51 @@ impl Film {
         let file = File::create(&self.filename)?;
         let w = BufWriter::new(file);
 
+        let mut final_pixels = Vec::with_capacity(self.buffer.len() * 3);
+
+        for &spectrum in &self.buffer {
+            let r = spectrum.red.clamp(0.0, 1.0);
+            let g = spectrum.green.clamp(0.0, 1.0);
+            let b = spectrum.blue.clamp(0.0, 1.0);
+
+            let (final_r, final_g, final_b) = if self.gamma_corrected {
+                let gamma = 1.0 / 2.2;
+                (r.powf(gamma), g.powf(gamma), b.powf(gamma))
+            } else {
+                (r, g, b)
+            };
+
+            final_pixels.push((final_r * 255.0) as u8);
+            final_pixels.push((final_g * 255.0) as u8);
+            final_pixels.push((final_b * 255.0) as u8);
+        }
+
         match self.img_type {
-            ImageType::Ppm => self.write_ppm(w),
-            ImageType::Png => self.write_png(w),
+            ImageType::Ppm => self.write_ppm(w, &final_pixels),
+            ImageType::Png => self.write_png(w, &final_pixels),
         }
     }
 
-    fn write_ppm(&self, mut out: BufWriter<File>) -> Result<()> {
+    fn write_ppm(&self, mut out: BufWriter<File>, buffer: &[u8]) -> Result<()> {
         writeln!(out, "P3")?;
         writeln!(out, "{} {}", self.width, self.height)?;
-        writeln!(out, "{}", Self::MAX_CHANNEL_VALUE)?;
+        writeln!(out, "{}", 255.0)?;
 
-        for color in &self.buffer {
-            writeln!(out, "{} {} {}", color.red, color.green, color.blue)?;
+        for color in buffer {
+            writeln!(out, "{}", color)?;
         }
 
         Ok(())
     }
 
-    fn write_png(&self, out: BufWriter<File>) -> Result<()> {
+    fn write_png(&self, out: BufWriter<File>, buffer: &[u8]) -> Result<()> {
         let mut encoder = png::Encoder::new(out, self.width as u32, self.height as u32);
         encoder.set_color(png::ColorType::Rgb);
         encoder.set_depth(png::BitDepth::Eight);
 
         let mut writer = encoder.write_header()?;
 
-        writer.write_image_data(bytemuck::cast_slice(&self.buffer))?;
+        writer.write_image_data(buffer)?;
 
         Ok(())
     }

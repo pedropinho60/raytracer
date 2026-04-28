@@ -18,13 +18,14 @@ impl Primitive {
     }
 
     pub fn intersect(&self, ray: Ray, t_min: f64, t_max: f64) -> Option<(f64, Surfel)> {
-        let (t, p, n) = self.shape.intersect(ray, t_min, t_max)?;
+        let (t, point, normal, from_behind) = self.shape.intersect(ray, t_min, t_max)?;
 
         Some((
             t,
             Surfel {
-                p,
-                n,
+                point,
+                normal,
+                from_behind,
                 material_id: self.material_id,
             },
         ))
@@ -38,7 +39,7 @@ pub enum Shape {
 }
 
 impl Shape {
-    pub fn intersect(&self, ray: Ray, t_min: f64, t_max: f64) -> Option<(f64, Point3, Vec3)> {
+    pub fn intersect(&self, ray: Ray, t_min: f64, t_max: f64) -> Option<(f64, Point3, Vec3, bool)> {
         match self {
             Shape::Sphere(inner) => inner.intersect(ray, t_min, t_max),
             Shape::Plane(inner) => inner.intersect(ray, t_min, t_max),
@@ -53,7 +54,7 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    pub fn intersect(&self, ray: Ray, t_min: f64, t_max: f64) -> Option<(f64, Point3, Vec3)> {
+    pub fn intersect(&self, ray: Ray, t_min: f64, t_max: f64) -> Option<(f64, Point3, Vec3, bool)> {
         let o = ray.origin;
         let d_hat = ray.direction.normalize();
 
@@ -87,13 +88,10 @@ impl Sphere {
 
         let outward_vector = point - self.center;
 
-        let mut normal = outward_vector / self.radius;
+        let normal = outward_vector / self.radius;
+        let from_behind = ray.direction.dot(normal) > 0.0;
 
-        if ray.direction.dot(normal) > 0.0 {
-            normal = -normal;
-        }
-
-        Some((t, point, normal))
+        Some((t, point, normal, from_behind))
     }
 }
 
@@ -111,7 +109,7 @@ impl Plane {
         }
     }
 
-    pub fn intersect(&self, ray: Ray, t_min: f64, t_max: f64) -> Option<(f64, Point3, Vec3)> {
+    pub fn intersect(&self, ray: Ray, t_min: f64, t_max: f64) -> Option<(f64, Point3, Vec3, bool)> {
         let d_hat = ray.direction.normalize();
         let denom = self.normal.dot(d_hat);
 
@@ -128,13 +126,10 @@ impl Plane {
 
         let point = ray.origin + d_hat * t;
 
-        let mut normal = self.normal;
+        let normal = self.normal;
+        let from_behind = ray.direction.dot(normal) > 0.0;
 
-        if ray.direction.dot(normal) > 0.0 {
-            normal = -normal;
-        }
-
-        Some((t, point, normal))
+        Some((t, point, normal, from_behind))
     }
 }
 
@@ -168,15 +163,5 @@ impl AggregatePrimitive {
         }
 
         closest_hit
-    }
-}
-
-impl IntoIterator for AggregatePrimitive {
-    type Item = Primitive;
-
-    type IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.primitives.into_iter()
     }
 }

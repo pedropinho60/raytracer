@@ -1,6 +1,6 @@
 use derive_more::From;
 
-use crate::RGBColor;
+use crate::color::Color;
 
 #[derive(Debug, Clone, From)]
 pub enum Background {
@@ -9,7 +9,7 @@ pub enum Background {
 }
 
 impl Background {
-    pub fn sample(&self, u: f64, v: f64) -> RGBColor {
+    pub fn sample(&self, u: f64, v: f64) -> Color {
         match self {
             Background::SingleColor(inner) => inner.sample(u, v),
             Background::Gradient(inner) => inner.sample(u, v),
@@ -19,41 +19,41 @@ impl Background {
 
 #[derive(Debug, Clone)]
 pub struct SingleColorBackground {
-    color: RGBColor,
+    color: Color,
 }
 
 impl SingleColorBackground {
-    pub fn new(color: RGBColor) -> Self {
+    pub fn new(color: Color) -> Self {
         Self { color }
     }
 
-    pub fn sample(&self, _u: f64, _v: f64) -> RGBColor {
+    pub fn sample(&self, _u: f64, _v: f64) -> Color {
         self.color
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct GradientBackground {
-    tl: RGBColor,
-    tr: RGBColor,
-    bl: RGBColor,
-    br: RGBColor,
+    tl: Color,
+    tr: Color,
+    bl: Color,
+    br: Color,
 }
 
 impl GradientBackground {
-    pub fn new(tl: RGBColor, tr: RGBColor, bl: RGBColor, br: RGBColor) -> Self {
+    pub fn new(tl: Color, tr: Color, bl: Color, br: Color) -> Self {
         Self { tl, tr, bl, br }
     }
 
-    fn lerp(a: RGBColor, b: RGBColor, t: f64) -> RGBColor {
-        RGBColor {
-            red: ((1. - t) * a.red as f64 + t * b.red as f64) as u8,
-            green: ((1. - t) * a.green as f64 + t * b.green as f64) as u8,
-            blue: ((1. - t) * a.blue as f64 + t * b.blue as f64) as u8,
+    fn lerp(a: Color, b: Color, t: f64) -> Color {
+        Color {
+            red: (1. - t) * a.red + t * b.red,
+            green: (1. - t) * a.green + t * b.green,
+            blue: (1. - t) * a.blue + t * b.blue,
         }
     }
 
-    pub fn sample(&self, u: f64, v: f64) -> RGBColor {
+    pub fn sample(&self, u: f64, v: f64) -> Color {
         let top = Self::lerp(self.tl, self.tr, v);
         let bot = Self::lerp(self.bl, self.br, v);
 

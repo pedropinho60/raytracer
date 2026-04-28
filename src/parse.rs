@@ -3,12 +3,14 @@ use std::{path::PathBuf, str::FromStr};
 use serde::{Deserialize, Deserializer};
 
 use crate::{
-    RGBColor, WindowSize,
+    WindowSize,
     background::{Background, GradientBackground, SingleColorBackground},
     camera::{Camera, OrthographicCamera, PerspectiveCamera},
+    color::{Color, ColorU8},
     film::{Film, ImageType},
-    integrator::{Integrator, NormalMapIntegrator, RayCastIntegrator},
-    material::{CheckerboardMaterial, Material},
+    integrator::{BlinnPhongIntegrator, Integrator, NormalMapIntegrator, RayCastIntegrator},
+    light::{AmbientLight, DirectionalLight, Light, PointLight},
+    material::{BlinnPhongMaterial, CheckerboardMaterial, Material},
     math::{Point3, Vec3},
     primitive::{Plane, Primitive, Sphere},
     scene::Scene,
@@ -38,10 +40,15 @@ pub enum SceneCommand {
     Camera(CameraType),
     Integrator(IntegratorType),
     Film(FilmType),
+    Aggregator {
+        #[serde(rename = "@type")]
+        ty: String,
+    },
     WorldBegin,
     MakeNamedMaterial {
         #[serde(rename = "@name")]
         name: String,
+        #[serde(flatten)]
         material_type: MaterialType,
     },
     NamedMaterial {
@@ -51,6 +58,7 @@ pub enum SceneCommand {
     Material(MaterialType),
     Object(ObjectType),
     Background(BackgroundType),
+    LightSource(LightType),
     WorldEnd,
     RenderAgain,
     Include {
@@ -105,8 +113,8 @@ impl CameraType {
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "@type")]
+#[serde(rename_all = "snake_case")]
 pub enum FilmType {
-    #[serde(rename = "image")]
     Image {
         #[serde(rename = "@w_res", alias = "@x_res", deserialize_with = "parse_number")]
         w_res: u16,
@@ -116,36 +124,44 @@ pub enum FilmType {
         filename: PathBuf,
         #[serde(rename = "@img_type")]
         img_type: ImageType,
+        #[serde(
+            rename = "@gamma_corrected",
+            default,
+            deserialize_with = "parse_number"
+        )]
+        gamma_corrected: bool,
     },
 }
 
 #[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(tag = "@type")]
+#[serde(rename_all = "snake_case")]
 pub enum BackgroundType {
-    #[serde(rename = "single_color")]
     SingleColor {
         #[serde(rename = "@color")]
-        color: RGBColor,
+        color: ColorU8,
     },
     #[serde(rename = "4_colors", alias = "colors")]
     FourColors {
         #[serde(rename = "@bl")]
-        bl: RGBColor,
+        bl: ColorU8,
         #[serde(rename = "@tl")]
-        tl: RGBColor,
+        tl: ColorU8,
         #[serde(rename = "@tr")]
-        tr: RGBColor,
+        tr: ColorU8,
         #[serde(rename = "@br")]
-        br: RGBColor,
+        br: ColorU8,
     },
 }
 
 impl BackgroundType {
     pub fn to_background(self) -> Background {
         match self {
-            BackgroundType::SingleColor { color } => SingleColorBackground::new(color).into(),
+            BackgroundType::SingleColor { color } => {
+                SingleColorBackground::new(color.into()).into()
+            }
             BackgroundType::FourColors { bl, tl, tr, br } => {
-                GradientBackground::new(tl, tr, bl, br).into()
+                GradientBackground::new(tl.into(), tr.into(), bl.into(), br.into()).into()
             }
         }
     }
@@ -153,15 +169,74 @@ impl BackgroundType {
 
 #[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(tag = "@type")]
+#[serde(rename_all = "snake_case")]
+pub enum LightType {
+    Ambient {
+        #[serde(rename = "@I")]
+        intensity: Color,
+        #[serde(rename = "@scale")]
+        scale: Color,
+    },
+    Point {
+        #[serde(rename = "@I")]
+        intensity: Color,
+        #[serde(rename = "@scale")]
+        scale: Color,
+        #[serde(rename = "@from")]
+        from: Point3,
+    },
+    Directional {
+        #[serde(rename = "@I")]
+        intensity: Color,
+        #[serde(rename = "@scale")]
+        scale: Color,
+        #[serde(rename = "@from")]
+        from: Point3,
+        #[serde(rename = "@to")]
+        to: Point3,
+    },
+}
+
+impl LightType {
+    pub fn to_light(self) -> Light {
+        match self {
+            LightType::Ambient { intensity, scale } => AmbientLight {
+                intensity: intensity * scale,
+            }
+            .into(),
+            LightType::Point {
+                intensity,
+                scale,
+                from,
+            } => PointLight {
+                intensity: intensity * scale,
+                point: from,
+            }
+            .into(),
+            LightType::Directional {
+                intensity,
+                scale,
+                from,
+                to,
+            } => DirectionalLight {
+                intensity: intensity * scale,
+                direction: (to - from).normalize(),
+            }
+            .into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(tag = "@type")]
+#[serde(rename_all = "snake_case")]
 pub enum ObjectType {
-    #[serde(rename = "sphere")]
     Sphere {
         #[serde(rename = "@center")]
         center: Point3,
         #[serde(rename = "@radius", deserialize_with = "parse_number")]
         radius: f64,
     },
-    #[serde(rename = "plane")]
     Plane {
         #[serde(rename = "@point")]
         point: Point3,
@@ -185,43 +260,58 @@ impl ObjectType {
 
 #[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(tag = "@type")]
+#[serde(rename_all = "snake_case")]
 pub enum MaterialType {
-    #[serde(rename = "flat")]
     Flat {
         #[serde(rename = "@color")]
-        color: RGBColor,
+        color: ColorU8,
     },
-    #[serde(rename = "checkerboard")]
     Checkerboard {
         #[serde(rename = "@color_a")]
-        color_a: RGBColor,
+        color_a: ColorU8,
         #[serde(rename = "@color_b")]
-        color_b: RGBColor,
+        color_b: ColorU8,
         #[serde(rename = "@scale", deserialize_with = "parse_number")]
         scale: f64,
+    },
+    Blinn {
+        #[serde(rename = "@ambient")]
+        ambient: Color,
+        #[serde(rename = "@diffuse")]
+        diffuse: Color,
+        #[serde(rename = "@specular")]
+        specular: Color,
+        #[serde(rename = "@glossiness", deserialize_with = "parse_number")]
+        glossiness: f64,
     },
 }
 
 impl MaterialType {
     pub fn to_material(self) -> Material {
         match self {
-            MaterialType::Flat { color } => Material::Flat { kd: color },
+            MaterialType::Flat { color } => Material::Flat { kd: color.into() },
             MaterialType::Checkerboard {
                 color_a,
                 color_b,
                 scale,
-            } => CheckerboardMaterial::new(color_a, color_b, scale).into(),
+            } => CheckerboardMaterial::new(color_a.into(), color_b.into(), scale).into(),
+            MaterialType::Blinn {
+                ambient,
+                diffuse,
+                specular,
+                glossiness,
+            } => BlinnPhongMaterial::new(diffuse, specular, glossiness, ambient).into(),
         }
     }
 }
 
 #[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(tag = "@type")]
+#[serde(rename_all = "snake_case")]
 pub enum IntegratorType {
-    #[serde(rename = "flat")]
     Flat,
-    #[serde(rename = "normal_map")]
     NormalMap,
+    BlinnPhong,
 }
 
 impl IntegratorType {
@@ -229,6 +319,7 @@ impl IntegratorType {
         match self {
             IntegratorType::Flat => RayCastIntegrator::new(camera, scene).into(),
             IntegratorType::NormalMap => NormalMapIntegrator::new(camera, scene).into(),
+            IntegratorType::BlinnPhong => BlinnPhongIntegrator::new(camera, scene).into(),
         }
     }
 }
