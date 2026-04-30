@@ -53,11 +53,11 @@ impl PerspectiveCamera {
         let gaze = self.look_at - self.look_from;
         let vec_w = gaze.normalize();
         let vec_u = self.up.cross(vec_w).normalize();
-        let vec_v = vec_w.cross(vec_u).normalize();
+        let vec_v = vec_w.cross(vec_u);
 
         let direction = vec_w + u * vec_u + v * vec_v;
 
-        Ray::new(self.look_from, direction)
+        Ray::new(self.look_from, direction.normalize())
     }
 }
 
@@ -93,7 +93,7 @@ impl OrthographicCamera {
         let gaze = self.look_at - self.look_from;
         let vec_w = gaze.normalize();
         let vec_u = self.up.cross(vec_w).normalize();
-        let vec_v = vec_w.cross(vec_u).normalize();
+        let vec_v = vec_w.cross(vec_u);
 
         let origin = self.look_from + u * vec_u + v * vec_v;
 

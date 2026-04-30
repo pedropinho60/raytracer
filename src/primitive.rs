@@ -56,12 +56,11 @@ pub struct Sphere {
 impl Sphere {
     pub fn intersect(&self, ray: Ray, t_min: f64, t_max: f64) -> Option<(f64, Point3, Vec3, bool)> {
         let o = ray.origin;
-        let d_hat = ray.direction.normalize();
 
         let oc = o - self.center;
 
-        let parallel_len = oc.dot(d_hat);
-        let oc_perp = oc - d_hat * parallel_len;
+        let parallel_len = oc.dot(ray.direction);
+        let oc_perp = oc - ray.direction * parallel_len;
 
         let delta = self.radius * self.radius - oc_perp.dot(oc_perp);
 
@@ -84,7 +83,7 @@ impl Sphere {
             }
         }
 
-        let point = ray.origin + d_hat * t;
+        let point = ray.origin + ray.direction * t;
 
         let outward_vector = point - self.center;
 
@@ -110,8 +109,7 @@ impl Plane {
     }
 
     pub fn intersect(&self, ray: Ray, t_min: f64, t_max: f64) -> Option<(f64, Point3, Vec3, bool)> {
-        let d_hat = ray.direction.normalize();
-        let denom = self.normal.dot(d_hat);
+        let denom = self.normal.dot(ray.direction);
 
         if denom.abs() < 1e-6 {
             return None;
@@ -124,7 +122,7 @@ impl Plane {
             return None;
         }
 
-        let point = ray.origin + d_hat * t;
+        let point = ray.origin + ray.direction * t;
 
         let normal = self.normal;
         let from_behind = ray.direction.dot(normal) > 0.0;
