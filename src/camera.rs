@@ -25,16 +25,16 @@ pub struct PerspectiveCamera {
     look_from: Point3,
     look_at: Point3,
     up: Vec3,
-    fovy: u16,
+    dimensions: WindowSize,
 }
 
 impl PerspectiveCamera {
-    pub fn new(look_from: Point3, look_at: Point3, up: Vec3, fovy: u16) -> Self {
+    pub fn new(look_from: Point3, look_at: Point3, up: Vec3, dimensions: WindowSize) -> Self {
         Self {
             look_from,
             look_at,
             up,
-            fovy,
+            dimensions,
         }
     }
 
@@ -42,14 +42,10 @@ impl PerspectiveCamera {
         let width = width as f64;
         let height = height as f64;
 
-        let h = (self.fovy as f64 / 2.0).to_radians().tan();
-
-        let aspect_ratio = width / height;
-
-        let left = -aspect_ratio * h;
-        let right = aspect_ratio * h;
-        let bottom = -h;
-        let top = h;
+        let left = self.dimensions.left;
+        let right = self.dimensions.right;
+        let bottom = self.dimensions.bottom;
+        let top = self.dimensions.top;
 
         let u = left + (right - left) * (point.col as f64 + 0.5) / width;
         let v = bottom + (top - bottom) * (height - 1.0 - point.row as f64 + 0.5) / height;

@@ -66,7 +66,7 @@ impl RenderState {
             .current_camera_type
             .ok_or(SceneError::Render("cannot render without a camera"))?;
 
-        let mut camera: Camera = camera_type.to_camera(camera_args);
+        let mut camera: Camera = camera_type.to_camera(camera_args, film.width(), film.height());
 
         let integrator_type = self
             .current_integrator_type

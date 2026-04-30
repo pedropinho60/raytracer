@@ -92,7 +92,7 @@ pub enum CameraType {
 }
 
 impl CameraType {
-    pub fn to_camera(self, camera_args: CameraArgs) -> Camera {
+    pub fn to_camera(self, camera_args: CameraArgs, width: u16, height: u16) -> Camera {
         let CameraArgs {
             look_from,
             look_at,
@@ -104,7 +104,27 @@ impl CameraType {
                 OrthographicCamera::new(look_from, look_at, up, screen_window).into()
             }
             CameraType::Perspective { fovy } => {
-                PerspectiveCamera::new(look_from, look_at, up, fovy).into()
+                let h = (fovy as f64 / 2.0).to_radians().tan();
+
+                let aspect_ratio = width as f64 / height as f64;
+
+                let left = -aspect_ratio * h;
+                let right = aspect_ratio * h;
+                let bottom = -h;
+                let top = h;
+
+                PerspectiveCamera::new(
+                    look_from,
+                    look_at,
+                    up,
+                    WindowSize {
+                        left,
+                        right,
+                        bottom,
+                        top,
+                    },
+                )
+                .into()
             }
         }
     }
