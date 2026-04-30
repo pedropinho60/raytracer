@@ -9,7 +9,7 @@ use crate::{
     color::{Color, ColorU8},
     film::ImageType,
     integrator::{BlinnPhongIntegrator, Integrator, NormalMapIntegrator, RayCastIntegrator},
-    light::{AmbientLight, DirectionalLight, Light, PointLight},
+    light::{AmbientLight, Attenuation, DirectionalLight, Light, PointLight},
     material::{BlinnPhongMaterial, CheckerboardMaterial, Material},
     math::{Point3, Vec3},
     primitive::{Plane, Primitive, Sphere},
@@ -203,6 +203,8 @@ pub enum LightType {
         scale: Color,
         #[serde(rename = "@from")]
         from: Point3,
+        #[serde(rename = "@attenuation")]
+        attenuation: Option<Attenuation>,
     },
     Directional {
         #[serde(rename = "@I")]
@@ -227,9 +229,11 @@ impl LightType {
                 intensity,
                 scale,
                 from,
+                attenuation,
             } => PointLight {
                 intensity: intensity * scale,
                 point: from,
+                attenuation: attenuation.unwrap_or_default(),
             }
             .into(),
             LightType::Directional {

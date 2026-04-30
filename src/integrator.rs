@@ -181,10 +181,15 @@ impl BlinnPhongIntegrator {
                     color += ambient_light.intensity * ka;
                     continue;
                 }
-                Light::Point(point_light) => (
-                    (point_light.point - isect.point).normalize(),
-                    point_light.intensity,
-                ),
+                Light::Point(point_light) => {
+                    let direction = point_light.point - isect.point;
+                    let distance = direction.dot(direction).sqrt();
+
+                    let l = (point_light.point - isect.point).normalize();
+                    let intensity = point_light.intensity * point_light.attenuation(distance);
+
+                    (l, intensity)
+                }
                 Light::Directional(directional_light) => {
                     (-directional_light.direction, directional_light.intensity)
                 }
