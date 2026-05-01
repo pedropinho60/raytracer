@@ -4,17 +4,17 @@ use serde::Deserialize;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Color {
-    pub red: f64,
-    pub green: f64,
-    pub blue: f64,
+    pub red: f32,
+    pub green: f32,
+    pub blue: f32,
 }
 
 impl From<ColorU8> for Color {
     fn from(value: ColorU8) -> Self {
         Self {
-            red: value.red as f64 / 255.0,
-            green: value.green as f64 / 255.0,
-            blue: value.blue as f64 / 255.0,
+            red: value.red as f32 / 255.0,
+            green: value.green as f32 / 255.0,
+            blue: value.blue as f32 / 255.0,
         }
     }
 }
@@ -51,10 +51,10 @@ impl Mul<Color> for Color {
     }
 }
 
-impl Mul<f64> for Color {
+impl Mul<f32> for Color {
     type Output = Color;
 
-    fn mul(self, rhs: f64) -> Self::Output {
+    fn mul(self, rhs: f32) -> Self::Output {
         Self::Output {
             red: self.red * rhs,
             green: self.green * rhs,

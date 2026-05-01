@@ -9,9 +9,9 @@ pub enum Background {
 }
 
 impl Background {
-    pub fn sample(&self, u: f64, v: f64) -> Color {
+    pub fn sample(&self, u: f32, v: f32) -> Color {
         match self {
-            Background::SingleColor(inner) => inner.sample(u, v),
+            Background::SingleColor(inner) => inner.sample(),
             Background::Gradient(inner) => inner.sample(u, v),
         }
     }
@@ -27,7 +27,7 @@ impl SingleColorBackground {
         Self { color }
     }
 
-    pub fn sample(&self, _u: f64, _v: f64) -> Color {
+    pub fn sample(&self) -> Color {
         self.color
     }
 }
@@ -45,7 +45,7 @@ impl GradientBackground {
         Self { tl, tr, bl, br }
     }
 
-    fn lerp(a: Color, b: Color, t: f64) -> Color {
+    fn lerp(a: Color, b: Color, t: f32) -> Color {
         Color {
             red: (1. - t) * a.red + t * b.red,
             green: (1. - t) * a.green + t * b.green,
@@ -53,7 +53,7 @@ impl GradientBackground {
         }
     }
 
-    pub fn sample(&self, u: f64, v: f64) -> Color {
+    pub fn sample(&self, u: f32, v: f32) -> Color {
         let top = Self::lerp(self.tl, self.tr, v);
         let bot = Self::lerp(self.bl, self.br, v);
 

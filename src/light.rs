@@ -1,10 +1,8 @@
 use derive_more::From;
+use glam::Vec3;
 use serde::Deserialize;
 
-use crate::{
-    color::Color,
-    math::{Point3, Vec3},
-};
+use crate::color::Color;
 
 #[derive(Clone, From)]
 pub enum Light {
@@ -16,12 +14,12 @@ pub enum Light {
 #[derive(Clone)]
 pub struct PointLight {
     pub intensity: Color,
-    pub point: Point3,
+    pub point: Vec3,
     pub attenuation: Attenuation,
 }
 
 impl PointLight {
-    pub fn attenuation(&self, distance: f64) -> f64 {
+    pub fn attenuation(&self, distance: f32) -> f32 {
         1.0 / (self.attenuation.kc
             + self.attenuation.kl * distance
             + self.attenuation.kq * distance)
@@ -41,9 +39,9 @@ pub struct AmbientLight {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Attenuation {
-    kc: f64,
-    kl: f64,
-    kq: f64,
+    kc: f32,
+    kl: f32,
+    kq: f32,
 }
 
 impl Default for Attenuation {

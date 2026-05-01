@@ -1,15 +1,9 @@
 use derive_more::From;
+use glam::Vec3;
 
 use crate::{
-    camera::Camera,
-    color::Color,
-    error::Result,
-    film::Film,
-    light::Light,
-    material::Material,
-    math::{Point2, Vec3},
-    ray::Ray,
-    scene::Scene,
+    camera::Camera, color::Color, error::Result, film::Film, light::Light, material::Material,
+    ray::Ray, scene::Scene,
 };
 
 use rayon::prelude::*;
@@ -68,17 +62,10 @@ impl SamplerIntegrator {
                 let col = index % width as usize;
                 let row = index / width as usize;
 
-                let ray = camera.generate_ray(
-                    Point2 {
-                        row: row as u16,
-                        col: col as u16,
-                    },
-                    width,
-                    height,
-                );
+                let ray = camera.generate_ray(row as u16, col as u16, width, height);
 
-                let normalized_row = row as f64 / (height - 1) as f64;
-                let normalized_col = col as f64 / (width - 1) as f64;
+                let normalized_row = row as f32 / (height - 1) as f32;
+                let normalized_col = col as f32 / (width - 1) as f32;
 
                 *color = self
                     .li(ray, scene)
@@ -197,8 +184,8 @@ impl BlinnPhongIntegrator {
 
             let h = (v + l).normalize();
 
-            let diffuse_term = i * kd * f64::max(n.dot(l), 0.0);
-            let specular_term = i * ks * f64::max(n.dot(h), 0.0).powf(g);
+            let diffuse_term = i * kd * f32::max(n.dot(l), 0.0);
+            let specular_term = i * ks * f32::max(n.dot(h), 0.0).powf(g);
 
             color += diffuse_term + specular_term;
         }

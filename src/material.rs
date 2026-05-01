@@ -1,6 +1,7 @@
 use derive_more::From;
+use glam::Vec3;
 
-use crate::{color::Color, math::Point3};
+use crate::color::Color;
 
 #[derive(Clone, From)]
 pub enum Material {
@@ -13,11 +14,11 @@ pub enum Material {
 pub struct CheckerboardMaterial {
     color_a: Color,
     color_b: Color,
-    scale: f64,
+    scale: f32,
 }
 
 impl CheckerboardMaterial {
-    pub fn new(color_a: Color, color_b: Color, scale: f64) -> Self {
+    pub fn new(color_a: Color, color_b: Color, scale: f32) -> Self {
         Self {
             color_a,
             color_b,
@@ -25,7 +26,7 @@ impl CheckerboardMaterial {
         }
     }
 
-    pub fn color_at(&self, point: Point3) -> Color {
+    pub fn color_at(&self, point: Vec3) -> Color {
         let scaled_point = point / self.scale;
 
         let ix = scaled_point.x.floor() as i64;
@@ -44,12 +45,12 @@ impl CheckerboardMaterial {
 pub struct BlinnPhongMaterial {
     pub diffuse: Color,
     pub specular: Color,
-    pub glossiness: f64,
+    pub glossiness: f32,
     pub ambient: Color,
 }
 
 impl BlinnPhongMaterial {
-    pub fn new(diffuse: Color, specular: Color, glossiness: f64, ambient: Color) -> Self {
+    pub fn new(diffuse: Color, specular: Color, glossiness: f32, ambient: Color) -> Self {
         Self {
             diffuse,
             specular,

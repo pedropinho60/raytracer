@@ -1,10 +1,7 @@
 use derive_more::From;
+use glam::Vec3;
 
-use crate::{
-    WindowSize,
-    math::{Point2, Point3, Vec3},
-    ray::Ray,
-};
+use crate::{WindowSize, ray::Ray};
 
 #[derive(From)]
 pub enum Camera {
@@ -13,16 +10,16 @@ pub enum Camera {
 }
 
 impl Camera {
-    pub fn generate_ray(&self, point: Point2, width: u16, height: u16) -> Ray {
+    pub fn generate_ray(&self, row: u16, col: u16, width: u16, height: u16) -> Ray {
         match self {
-            Camera::Perspective(inner) => inner.generate_ray(point, width, height),
-            Camera::Orthographic(inner) => inner.generate_ray(point, width, height),
+            Camera::Perspective(inner) => inner.generate_ray(row, col, width, height),
+            Camera::Orthographic(inner) => inner.generate_ray(row, col, width, height),
         }
     }
 }
 
 pub struct PerspectiveCamera {
-    origin: Point3,
+    origin: Vec3,
     dimensions: WindowSize,
     u: Vec3,
     v: Vec3,
@@ -31,16 +28,16 @@ pub struct PerspectiveCamera {
 
 impl PerspectiveCamera {
     pub fn new(
-        look_from: Point3,
-        look_at: Point3,
+        look_from: Vec3,
+        look_at: Vec3,
         up: Vec3,
         fovy: u16,
         width: u16,
         height: u16,
     ) -> Self {
-        let h = (fovy as f64 / 2.0).to_radians().tan();
+        let h = (fovy as f32 / 2.0).to_radians().tan();
 
-        let aspect_ratio = width as f64 / height as f64;
+        let aspect_ratio = width as f32 / height as f32;
 
         let left = -aspect_ratio * h;
         let right = aspect_ratio * h;
@@ -66,17 +63,17 @@ impl PerspectiveCamera {
         }
     }
 
-    pub fn generate_ray(&self, point: Point2, width: u16, height: u16) -> Ray {
-        let width = width as f64;
-        let height = height as f64;
+    pub fn generate_ray(&self, row: u16, col: u16, width: u16, height: u16) -> Ray {
+        let width = width as f32;
+        let height = height as f32;
 
         let left = self.dimensions.left;
         let right = self.dimensions.right;
         let bottom = self.dimensions.bottom;
         let top = self.dimensions.top;
 
-        let u = left + (right - left) * (point.col as f64 + 0.5) / width;
-        let v = bottom + (top - bottom) * (height - 1.0 - point.row as f64 + 0.5) / height;
+        let u = left + (right - left) * (col as f32 + 0.5) / width;
+        let v = bottom + (top - bottom) * (height - 1.0 - row as f32 + 0.5) / height;
 
         let direction = self.w + u * self.u + v * self.v;
 
@@ -85,7 +82,7 @@ impl PerspectiveCamera {
 }
 
 pub struct OrthographicCamera {
-    origin: Point3,
+    origin: Vec3,
     dimensions: WindowSize,
     u: Vec3,
     v: Vec3,
@@ -93,7 +90,7 @@ pub struct OrthographicCamera {
 }
 
 impl OrthographicCamera {
-    pub fn new(look_from: Point3, look_at: Point3, up: Vec3, dimensions: WindowSize) -> Self {
+    pub fn new(look_from: Vec3, look_at: Vec3, up: Vec3, dimensions: WindowSize) -> Self {
         let gaze = look_at - look_from;
         let vec_w = gaze.normalize();
         let vec_u = up.cross(vec_w).normalize();
@@ -108,17 +105,17 @@ impl OrthographicCamera {
         }
     }
 
-    pub fn generate_ray(&self, point: Point2, width: u16, height: u16) -> Ray {
-        let width = width as f64;
-        let height = height as f64;
+    pub fn generate_ray(&self, row: u16, col: u16, width: u16, height: u16) -> Ray {
+        let width = width as f32;
+        let height = height as f32;
 
         let left = self.dimensions.left;
         let right = self.dimensions.right;
         let bottom = self.dimensions.bottom;
         let top = self.dimensions.top;
 
-        let u = left + (right - left) * (point.col as f64 + 0.5) / width;
-        let v = bottom + (top - bottom) * (height - 1.0 - point.row as f64 + 0.5) / height;
+        let u = left + (right - left) * (col as f32 + 0.5) / width;
+        let v = bottom + (top - bottom) * (height - 1.0 - row as f32 + 0.5) / height;
 
         let origin = self.origin + u * self.u + v * self.v;
 

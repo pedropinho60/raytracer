@@ -23,10 +23,10 @@ pub use error::Result;
 
 #[derive(Debug, Clone, Copy)]
 pub struct WindowSize {
-    pub left: f64,
-    pub right: f64,
-    pub bottom: f64,
-    pub top: f64,
+    pub left: f32,
+    pub right: f32,
+    pub bottom: f32,
+    pub top: f32,
 }
 
 impl<'de> Deserialize<'de> for WindowSize {

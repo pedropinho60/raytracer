@@ -1,5 +1,6 @@
 use std::{path::PathBuf, str::FromStr};
 
+use glam::Vec3;
 use serde::{Deserialize, Deserializer};
 
 use crate::{
@@ -11,11 +12,10 @@ use crate::{
     integrator::{BlinnPhongIntegrator, Integrator, NormalMapIntegrator, RayCastIntegrator},
     light::{AmbientLight, Attenuation, DirectionalLight, Light, PointLight},
     material::{BlinnPhongMaterial, CheckerboardMaterial, Material},
-    math::{Point3, Vec3},
     primitive::{Plane, Primitive, Sphere},
 };
 
-fn parse_number<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+fn parse_from_string<'de, T, D>(deserializer: D) -> Result<T, D::Error>
 where
     D: Deserializer<'de>,
     T: FromStr,
@@ -69,11 +69,11 @@ pub enum SceneCommand {
 #[derive(Debug, Clone, Copy, Deserialize)]
 pub struct CameraArgs {
     #[serde(rename = "@look_from")]
-    pub look_from: Point3,
+    pub look_from: Vec3String,
     #[serde(rename = "@look_at")]
-    pub look_at: Point3,
+    pub look_at: Vec3String,
     #[serde(rename = "@up")]
-    pub up: Vec3,
+    pub up: Vec3String,
 }
 
 #[derive(Debug, Clone, Copy, Deserialize)]
@@ -86,7 +86,7 @@ pub enum CameraType {
     },
     #[serde(rename = "perspective")]
     Perspective {
-        #[serde(rename = "@fovy", deserialize_with = "parse_number")]
+        #[serde(rename = "@fovy", deserialize_with = "parse_from_string")]
         fovy: u16,
     },
 }
@@ -101,11 +101,18 @@ impl CameraType {
 
         match self {
             CameraType::Orthographic { screen_window } => {
-                OrthographicCamera::new(look_from, look_at, up, screen_window).into()
+                OrthographicCamera::new(look_from.into(), look_at.into(), up.into(), screen_window)
+                    .into()
             }
-            CameraType::Perspective { fovy } => {
-                PerspectiveCamera::new(look_from, look_at, up, fovy, width, height).into()
-            }
+            CameraType::Perspective { fovy } => PerspectiveCamera::new(
+                look_from.into(),
+                look_at.into(),
+                up.into(),
+                fovy,
+                width,
+                height,
+            )
+            .into(),
         }
     }
 }
@@ -115,9 +122,17 @@ impl CameraType {
 #[serde(rename_all = "snake_case")]
 pub enum FilmType {
     Image {
-        #[serde(rename = "@w_res", alias = "@x_res", deserialize_with = "parse_number")]
+        #[serde(
+            rename = "@w_res",
+            alias = "@x_res",
+            deserialize_with = "parse_from_string"
+        )]
         w_res: u16,
-        #[serde(rename = "@h_res", alias = "@y_res", deserialize_with = "parse_number")]
+        #[serde(
+            rename = "@h_res",
+            alias = "@y_res",
+            deserialize_with = "parse_from_string"
+        )]
         h_res: u16,
         #[serde(rename = "@filename")]
         filename: PathBuf,
@@ -126,7 +141,7 @@ pub enum FilmType {
         #[serde(
             rename = "@gamma_corrected",
             default,
-            deserialize_with = "parse_number"
+            deserialize_with = "parse_from_string"
         )]
         gamma_corrected: bool,
     },
@@ -182,7 +197,7 @@ pub enum LightType {
         #[serde(rename = "@scale")]
         scale: Color,
         #[serde(rename = "@from")]
-        from: Point3,
+        from: Vec3String,
         #[serde(rename = "@attenuation")]
         attenuation: Option<Attenuation>,
     },
@@ -192,9 +207,9 @@ pub enum LightType {
         #[serde(rename = "@scale")]
         scale: Color,
         #[serde(rename = "@from")]
-        from: Point3,
+        from: Vec3String,
         #[serde(rename = "@to")]
-        to: Point3,
+        to: Vec3String,
     },
 }
 
@@ -212,7 +227,7 @@ impl LightType {
                 attenuation,
             } => PointLight {
                 intensity: intensity * scale,
-                point: from,
+                point: from.into(),
                 attenuation: attenuation.unwrap_or_default(),
             }
             .into(),
@@ -221,9 +236,13 @@ impl LightType {
                 scale,
                 from,
                 to,
-            } => DirectionalLight {
-                intensity: intensity * scale,
-                direction: (to - from).normalize(),
+            } => {
+                let to: Vec3 = to.into();
+                let from: Vec3 = from.into();
+                DirectionalLight {
+                    intensity: intensity * scale,
+                    direction: (to - from).normalize(),
+                }
             }
             .into(),
         }
@@ -236,26 +255,31 @@ impl LightType {
 pub enum ObjectType {
     Sphere {
         #[serde(rename = "@center")]
-        center: Point3,
-        #[serde(rename = "@radius", deserialize_with = "parse_number")]
-        radius: f64,
+        center: Vec3String,
+        #[serde(rename = "@radius", deserialize_with = "parse_from_string")]
+        radius: f32,
     },
     Plane {
         #[serde(rename = "@point")]
-        point: Point3,
+        point: Vec3String,
         #[serde(rename = "@normal")]
-        normal: Vec3,
+        normal: Vec3String,
     },
 }
 
 impl ObjectType {
     pub fn to_primitive(self, material_id: usize) -> Primitive {
         match self {
-            ObjectType::Sphere { center, radius } => {
-                Primitive::new(Sphere { center, radius }.into(), material_id)
-            }
+            ObjectType::Sphere { center, radius } => Primitive::new(
+                Sphere {
+                    center: center.into(),
+                    radius,
+                }
+                .into(),
+                material_id,
+            ),
             ObjectType::Plane { point, normal } => {
-                Primitive::new(Plane::new(point, normal).into(), material_id)
+                Primitive::new(Plane::new(point.into(), normal.into()).into(), material_id)
             }
         }
     }
@@ -274,8 +298,8 @@ pub enum MaterialType {
         color_a: ColorU8,
         #[serde(rename = "@color_b")]
         color_b: ColorU8,
-        #[serde(rename = "@scale", deserialize_with = "parse_number")]
-        scale: f64,
+        #[serde(rename = "@scale", deserialize_with = "parse_from_string")]
+        scale: f32,
     },
     Blinn {
         #[serde(rename = "@ambient")]
@@ -284,8 +308,8 @@ pub enum MaterialType {
         diffuse: Color,
         #[serde(rename = "@specular")]
         specular: Color,
-        #[serde(rename = "@glossiness", deserialize_with = "parse_number")]
-        glossiness: f64,
+        #[serde(rename = "@glossiness", deserialize_with = "parse_from_string")]
+        glossiness: f32,
     },
 }
 
@@ -323,6 +347,46 @@ impl IntegratorType {
             IntegratorType::Flat => RayCastIntegrator.into(),
             IntegratorType::NormalMap => NormalMapIntegrator.into(),
             IntegratorType::BlinnPhong => BlinnPhongIntegrator.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Vec3String {
+    x: f32,
+    y: f32,
+    z: f32,
+}
+
+impl<'de> Deserialize<'de> for Vec3String {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+
+        let parts: Vec<_> = s.split_whitespace().collect();
+
+        if parts.len() != 3 {
+            return Err(serde::de::Error::custom(
+                "Expected exactly 3 coordinate components",
+            ));
+        }
+
+        let x = parts[0].parse().map_err(serde::de::Error::custom)?;
+        let y = parts[1].parse().map_err(serde::de::Error::custom)?;
+        let z = parts[2].parse().map_err(serde::de::Error::custom)?;
+
+        Ok(Vec3String { x, y, z })
+    }
+}
+
+impl From<Vec3String> for Vec3 {
+    fn from(value: Vec3String) -> Self {
+        Self {
+            x: value.x,
+            y: value.y,
+            z: value.z,
         }
     }
 }

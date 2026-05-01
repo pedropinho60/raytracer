@@ -1,10 +1,7 @@
 use derive_more::From;
+use glam::Vec3;
 
-use crate::{
-    math::{Point3, Vec3},
-    ray::Ray,
-    surfel::Surfel,
-};
+use crate::{ray::Ray, surfel::Surfel};
 
 #[derive(Debug, Clone)]
 pub struct Primitive {
@@ -17,7 +14,7 @@ impl Primitive {
         Self { shape, material_id }
     }
 
-    pub fn intersect(&self, ray: Ray, t_min: f64, t_max: f64) -> Option<(f64, Surfel)> {
+    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Surfel)> {
         let (t, point, normal, from_behind) = self.shape.intersect(ray, t_min, t_max)?;
 
         Some((
@@ -39,7 +36,7 @@ pub enum Shape {
 }
 
 impl Shape {
-    pub fn intersect(&self, ray: Ray, t_min: f64, t_max: f64) -> Option<(f64, Point3, Vec3, bool)> {
+    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Vec3, Vec3, bool)> {
         match self {
             Shape::Sphere(inner) => inner.intersect(ray, t_min, t_max),
             Shape::Plane(inner) => inner.intersect(ray, t_min, t_max),
@@ -49,12 +46,12 @@ impl Shape {
 
 #[derive(Debug, Clone)]
 pub struct Sphere {
-    pub center: Point3,
-    pub radius: f64,
+    pub center: Vec3,
+    pub radius: f32,
 }
 
 impl Sphere {
-    pub fn intersect(&self, ray: Ray, t_min: f64, t_max: f64) -> Option<(f64, Point3, Vec3, bool)> {
+    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Vec3, Vec3, bool)> {
         let o = ray.origin;
 
         let oc = o - self.center;
@@ -96,19 +93,19 @@ impl Sphere {
 
 #[derive(Debug, Clone)]
 pub struct Plane {
-    point: Point3,
+    point: Vec3,
     normal: Vec3,
 }
 
 impl Plane {
-    pub fn new(point: Point3, normal: Vec3) -> Self {
+    pub fn new(point: Vec3, normal: Vec3) -> Self {
         Self {
             point,
             normal: normal.normalize(),
         }
     }
 
-    pub fn intersect(&self, ray: Ray, t_min: f64, t_max: f64) -> Option<(f64, Point3, Vec3, bool)> {
+    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Vec3, Vec3, bool)> {
         let denom = self.normal.dot(ray.direction);
 
         if denom.abs() < 1e-6 {
@@ -151,7 +148,7 @@ impl AggregatePrimitive {
         let mut closest_hit = None;
 
         let t_min = 0.001;
-        let mut t_closest = f64::INFINITY;
+        let mut t_closest = f32::INFINITY;
 
         for primitive in &self.primitives {
             if let Some((t, surfel)) = primitive.intersect(ray, t_min, t_closest) {
