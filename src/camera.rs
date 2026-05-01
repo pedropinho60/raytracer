@@ -22,19 +22,47 @@ impl Camera {
 }
 
 pub struct PerspectiveCamera {
-    look_from: Point3,
-    look_at: Point3,
-    up: Vec3,
+    origin: Point3,
     dimensions: WindowSize,
+    u: Vec3,
+    v: Vec3,
+    w: Vec3,
 }
 
 impl PerspectiveCamera {
-    pub fn new(look_from: Point3, look_at: Point3, up: Vec3, dimensions: WindowSize) -> Self {
+    pub fn new(
+        look_from: Point3,
+        look_at: Point3,
+        up: Vec3,
+        fovy: u16,
+        width: u16,
+        height: u16,
+    ) -> Self {
+        let h = (fovy as f64 / 2.0).to_radians().tan();
+
+        let aspect_ratio = width as f64 / height as f64;
+
+        let left = -aspect_ratio * h;
+        let right = aspect_ratio * h;
+        let bottom = -h;
+        let top = h;
+
+        let gaze = look_at - look_from;
+        let vec_w = gaze.normalize();
+        let vec_u = up.cross(vec_w).normalize();
+        let vec_v = vec_w.cross(vec_u);
+
         Self {
-            look_from,
-            look_at,
-            up,
-            dimensions,
+            origin: look_from,
+            dimensions: WindowSize {
+                left,
+                right,
+                bottom,
+                top,
+            },
+            u: vec_u,
+            v: vec_v,
+            w: vec_w,
         }
     }
 
@@ -50,31 +78,33 @@ impl PerspectiveCamera {
         let u = left + (right - left) * (point.col as f64 + 0.5) / width;
         let v = bottom + (top - bottom) * (height - 1.0 - point.row as f64 + 0.5) / height;
 
-        let gaze = self.look_at - self.look_from;
-        let vec_w = gaze.normalize();
-        let vec_u = self.up.cross(vec_w).normalize();
-        let vec_v = vec_w.cross(vec_u);
+        let direction = self.w + u * self.u + v * self.v;
 
-        let direction = vec_w + u * vec_u + v * vec_v;
-
-        Ray::new(self.look_from, direction.normalize())
+        Ray::new(self.origin, direction.normalize())
     }
 }
 
 pub struct OrthographicCamera {
-    look_from: Point3,
-    look_at: Point3,
-    up: Vec3,
+    origin: Point3,
     dimensions: WindowSize,
+    u: Vec3,
+    v: Vec3,
+    w: Vec3,
 }
 
 impl OrthographicCamera {
     pub fn new(look_from: Point3, look_at: Point3, up: Vec3, dimensions: WindowSize) -> Self {
+        let gaze = look_at - look_from;
+        let vec_w = gaze.normalize();
+        let vec_u = up.cross(vec_w).normalize();
+        let vec_v = vec_w.cross(vec_u);
+
         Self {
-            look_from,
-            look_at,
-            up,
+            origin: look_from,
             dimensions,
+            u: vec_u,
+            v: vec_v,
+            w: vec_w,
         }
     }
 
@@ -90,13 +120,8 @@ impl OrthographicCamera {
         let u = left + (right - left) * (point.col as f64 + 0.5) / width;
         let v = bottom + (top - bottom) * (height - 1.0 - point.row as f64 + 0.5) / height;
 
-        let gaze = self.look_at - self.look_from;
-        let vec_w = gaze.normalize();
-        let vec_u = self.up.cross(vec_w).normalize();
-        let vec_v = vec_w.cross(vec_u);
+        let origin = self.origin + u * self.u + v * self.v;
 
-        let origin = self.look_from + u * vec_u + v * vec_v;
-
-        Ray::new(origin, vec_w)
+        Ray::new(origin, self.w)
     }
 }
