@@ -1,5 +1,5 @@
 use derive_more::From;
-use glam::Vec3;
+use glam::Vec3A;
 
 use crate::color::Color;
 
@@ -26,7 +26,7 @@ impl CheckerboardMaterial {
         }
     }
 
-    pub fn color_at(&self, point: Vec3) -> Color {
+    pub fn color_at(&self, point: Vec3A) -> Color {
         let scaled_point = point / self.scale;
 
         let ix = scaled_point.x.floor() as i64;

@@ -5,6 +5,7 @@ mod background;
 mod camera;
 mod cli;
 mod color;
+mod dithering;
 mod error;
 mod film;
 mod integrator;

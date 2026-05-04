@@ -1,5 +1,5 @@
 use derive_more::From;
-use glam::Vec3;
+use glam::Vec3A;
 
 use crate::{
     camera::Camera, color::Color, error::Result, film::Film, light::Light, material::Material,
@@ -122,11 +122,7 @@ impl NormalMapIntegrator {
             -isect.normal
         };
 
-        normal += Vec3 {
-            x: 1.0,
-            y: 1.0,
-            z: 1.0,
-        } / 2.0;
+        normal += Vec3A::new(1.0, 1.0, 1.0) / 2.0;
 
         Some(Color {
             red: normal.x,

@@ -9,6 +9,42 @@ pub struct Color {
     pub blue: f32,
 }
 
+impl Color {
+    pub const BLACK: Color = Color {
+        red: 0.0,
+        green: 0.0,
+        blue: 0.0,
+    };
+
+    pub const WHITE: Color = Color {
+        red: 1.0,
+        green: 1.0,
+        blue: 1.0,
+    };
+
+    pub fn luminosity(self) -> f32 {
+        0.2126 * self.red + 0.7152 * self.green + 0.0722 * self.blue
+    }
+
+    pub fn clamp(self, min: f32, max: f32) -> Color {
+        Self {
+            red: self.red.clamp(min, max),
+            green: self.green.clamp(min, max),
+            blue: self.blue.clamp(min, max),
+        }
+    }
+
+    pub fn gamma_corrected(self) -> Color {
+        let gamma = 1.0 / 2.2;
+
+        Color {
+            red: self.red.powf(gamma),
+            green: self.green.powf(gamma),
+            blue: self.blue.powf(gamma),
+        }
+    }
+}
+
 impl From<ColorU8> for Color {
     fn from(value: ColorU8) -> Self {
         Self {

@@ -110,14 +110,21 @@ fn parse_from_file(file_path: &Path, state: &mut RenderState) -> Result<()> {
     for command in scene.commands {
         match command {
             SceneCommand::Film(FilmType::Image {
-                w_res,
-                h_res,
+                width,
+                height,
                 filename,
                 img_type,
                 gamma_corrected,
+                dithering,
             }) => {
-                state.current_film =
-                    Some(Film::new(w_res, h_res, filename, img_type, gamma_corrected))
+                state.current_film = Some(Film::new(
+                    width,
+                    height,
+                    filename,
+                    img_type,
+                    gamma_corrected,
+                    dithering.to_dithering(),
+                ))
             }
             SceneCommand::Background(background_type) => {
                 let background = background_type.to_background();

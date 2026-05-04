@@ -1,13 +1,13 @@
-use glam::Vec3;
+use glam::Vec3A;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Ray {
-    pub origin: Vec3,
-    pub direction: Vec3,
+    pub origin: Vec3A,
+    pub direction: Vec3A,
 }
 
 impl Ray {
-    pub fn new(origin: Vec3, direction: Vec3) -> Self {
+    pub fn new(origin: Vec3A, direction: Vec3A) -> Self {
         Self { origin, direction }
     }
 }

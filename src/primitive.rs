@@ -1,5 +1,5 @@
 use derive_more::From;
-use glam::Vec3;
+use glam::Vec3A;
 
 use crate::{ray::Ray, surfel::Surfel};
 
@@ -36,7 +36,7 @@ pub enum Shape {
 }
 
 impl Shape {
-    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Vec3, Vec3, bool)> {
+    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Vec3A, Vec3A, bool)> {
         match self {
             Shape::Sphere(inner) => inner.intersect(ray, t_min, t_max),
             Shape::Plane(inner) => inner.intersect(ray, t_min, t_max),
@@ -46,12 +46,12 @@ impl Shape {
 
 #[derive(Debug, Clone)]
 pub struct Sphere {
-    pub center: Vec3,
+    pub center: Vec3A,
     pub radius: f32,
 }
 
 impl Sphere {
-    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Vec3, Vec3, bool)> {
+    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Vec3A, Vec3A, bool)> {
         let o = ray.origin;
 
         let oc = o - self.center;
@@ -93,19 +93,19 @@ impl Sphere {
 
 #[derive(Debug, Clone)]
 pub struct Plane {
-    point: Vec3,
-    normal: Vec3,
+    point: Vec3A,
+    normal: Vec3A,
 }
 
 impl Plane {
-    pub fn new(point: Vec3, normal: Vec3) -> Self {
+    pub fn new(point: Vec3A, normal: Vec3A) -> Self {
         Self {
             point,
             normal: normal.normalize(),
         }
     }
 
-    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Vec3, Vec3, bool)> {
+    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Vec3A, Vec3A, bool)> {
         let denom = self.normal.dot(ray.direction);
 
         if denom.abs() < 1e-6 {

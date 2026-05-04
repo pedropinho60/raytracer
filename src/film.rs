@@ -6,8 +6,8 @@ use std::{
 
 use serde::Deserialize;
 
-use crate::Result;
 use crate::color::Color;
+use crate::{Result, dithering::Dithering};
 
 #[derive(Debug, Clone, Copy, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -24,6 +24,7 @@ pub struct Film {
     img_type: ImageType,
     buffer: Vec<Color>,
     gamma_corrected: bool,
+    dithering: Dithering,
 }
 
 impl Film {
@@ -33,6 +34,7 @@ impl Film {
         filename: PathBuf,
         img_type: ImageType,
         gamma_corrected: bool,
+        dithering: Dithering,
     ) -> Self {
         let buffer = vec![Color::default(); width as usize * height as usize];
 
@@ -43,6 +45,7 @@ impl Film {
             img_type,
             buffer,
             gamma_corrected,
+            dithering,
         }
     }
 
@@ -64,21 +67,21 @@ impl Film {
 
         let mut final_pixels = Vec::with_capacity(self.buffer.len() * 3);
 
-        for &spectrum in &self.buffer {
-            let r = spectrum.red.clamp(0.0, 1.0);
-            let g = spectrum.green.clamp(0.0, 1.0);
-            let b = spectrum.blue.clamp(0.0, 1.0);
+        for (index, color) in self.buffer.iter().enumerate() {
+            let mut final_color = color.clamp(0.0, 1.0);
 
-            let (final_r, final_g, final_b) = if self.gamma_corrected {
-                let gamma = 1.0 / 2.2;
-                (r.powf(gamma), g.powf(gamma), b.powf(gamma))
-            } else {
-                (r, g, b)
-            };
+            if self.gamma_corrected {
+                final_color = final_color.gamma_corrected();
+            }
 
-            final_pixels.push((final_r * 255.0) as u8);
-            final_pixels.push((final_g * 255.0) as u8);
-            final_pixels.push((final_b * 255.0) as u8);
+            let col = index % self.width as usize;
+            let row = index / self.width as usize;
+
+            final_color = self.dithering.get_color(row, col, final_color);
+
+            final_pixels.push((final_color.red * 255.0) as u8);
+            final_pixels.push((final_color.green * 255.0) as u8);
+            final_pixels.push((final_color.blue * 255.0) as u8);
         }
 
         match self.img_type {

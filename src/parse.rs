@@ -1,6 +1,6 @@
 use std::{path::PathBuf, str::FromStr};
 
-use glam::Vec3;
+use glam::Vec3A;
 use serde::{Deserialize, Deserializer};
 
 use crate::{
@@ -8,6 +8,7 @@ use crate::{
     background::{Background, GradientBackground, SingleColorBackground},
     camera::{Camera, OrthographicCamera, PerspectiveCamera},
     color::{Color, ColorU8},
+    dithering::{BayerDithering, BlueNoiseDithering, Dithering, WhiteNoiseDithering},
     film::ImageType,
     integrator::{BlinnPhongIntegrator, Integrator, NormalMapIntegrator, RayCastIntegrator},
     light::{AmbientLight, Attenuation, DirectionalLight, Light, PointLight},
@@ -127,13 +128,13 @@ pub enum FilmType {
             alias = "@x_res",
             deserialize_with = "parse_from_string"
         )]
-        w_res: u16,
+        width: u16,
         #[serde(
             rename = "@h_res",
             alias = "@y_res",
             deserialize_with = "parse_from_string"
         )]
-        h_res: u16,
+        height: u16,
         #[serde(rename = "@filename")]
         filename: PathBuf,
         #[serde(rename = "@img_type")]
@@ -144,7 +145,30 @@ pub enum FilmType {
             deserialize_with = "parse_from_string"
         )]
         gamma_corrected: bool,
+        #[serde(rename = "@dithering", default)]
+        dithering: DitheringType,
     },
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum DitheringType {
+    #[default]
+    None,
+    Bayer,
+    WhiteNoise,
+    BlueNoise,
+}
+
+impl DitheringType {
+    pub fn to_dithering(self) -> Dithering {
+        match self {
+            DitheringType::None => Dithering::None,
+            DitheringType::Bayer => BayerDithering.into(),
+            DitheringType::WhiteNoise => WhiteNoiseDithering.into(),
+            DitheringType::BlueNoise => BlueNoiseDithering::new().into(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Deserialize)]
@@ -237,8 +261,8 @@ impl LightType {
                 from,
                 to,
             } => {
-                let to: Vec3 = to.into();
-                let from: Vec3 = from.into();
+                let to: Vec3A = to.into();
+                let from: Vec3A = from.into();
                 DirectionalLight {
                     intensity: intensity * scale,
                     direction: (to - from).normalize(),
@@ -381,12 +405,8 @@ impl<'de> Deserialize<'de> for Vec3String {
     }
 }
 
-impl From<Vec3String> for Vec3 {
+impl From<Vec3String> for Vec3A {
     fn from(value: Vec3String) -> Self {
-        Self {
-            x: value.x,
-            y: value.y,
-            z: value.z,
-        }
+        Self::new(value.x, value.y, value.z)
     }
 }

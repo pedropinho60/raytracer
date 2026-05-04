@@ -1,5 +1,5 @@
 use derive_more::From;
-use glam::Vec3;
+use glam::Vec3A;
 
 use crate::{WindowSize, ray::Ray};
 
@@ -19,18 +19,18 @@ impl Camera {
 }
 
 pub struct PerspectiveCamera {
-    origin: Vec3,
+    origin: Vec3A,
     dimensions: WindowSize,
-    u: Vec3,
-    v: Vec3,
-    w: Vec3,
+    u: Vec3A,
+    v: Vec3A,
+    w: Vec3A,
 }
 
 impl PerspectiveCamera {
     pub fn new(
-        look_from: Vec3,
-        look_at: Vec3,
-        up: Vec3,
+        look_from: Vec3A,
+        look_at: Vec3A,
+        up: Vec3A,
         fovy: u16,
         width: u16,
         height: u16,
@@ -82,15 +82,15 @@ impl PerspectiveCamera {
 }
 
 pub struct OrthographicCamera {
-    origin: Vec3,
+    origin: Vec3A,
     dimensions: WindowSize,
-    u: Vec3,
-    v: Vec3,
-    w: Vec3,
+    u: Vec3A,
+    v: Vec3A,
+    w: Vec3A,
 }
 
 impl OrthographicCamera {
-    pub fn new(look_from: Vec3, look_at: Vec3, up: Vec3, dimensions: WindowSize) -> Self {
+    pub fn new(look_from: Vec3A, look_at: Vec3A, up: Vec3A, dimensions: WindowSize) -> Self {
         let gaze = look_at - look_from;
         let vec_w = gaze.normalize();
         let vec_u = up.cross(vec_w).normalize();

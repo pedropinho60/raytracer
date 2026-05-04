@@ -1,8 +1,8 @@
-use glam::Vec3;
+use glam::Vec3A;
 
 pub struct Surfel {
-    pub point: Vec3,
-    pub normal: Vec3,
+    pub point: Vec3A,
+    pub normal: Vec3A,
     pub from_behind: bool,
     pub material_id: usize,
 }

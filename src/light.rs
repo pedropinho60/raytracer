@@ -1,5 +1,5 @@
 use derive_more::From;
-use glam::Vec3;
+use glam::Vec3A;
 use serde::Deserialize;
 
 use crate::color::Color;
@@ -14,7 +14,7 @@ pub enum Light {
 #[derive(Clone)]
 pub struct PointLight {
     pub intensity: Color,
-    pub point: Vec3,
+    pub point: Vec3A,
     pub attenuation: Attenuation,
 }
 
@@ -29,7 +29,7 @@ impl PointLight {
 #[derive(Clone)]
 pub struct DirectionalLight {
     pub intensity: Color,
-    pub direction: Vec3,
+    pub direction: Vec3A,
 }
 
 #[derive(Clone)]
