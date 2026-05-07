@@ -3,14 +3,14 @@ use crate::{
     ray::Ray, surfel::Surfel,
 };
 
-pub struct Scene {
-    pub background: Background,
-    pub materials: Vec<Material>,
-    pub primitives: AggregatePrimitive,
-    pub lights: Vec<Light>,
+pub struct Scene<'a> {
+    pub background: &'a Background,
+    pub materials: &'a [Material],
+    pub primitives: &'a AggregatePrimitive,
+    pub lights: &'a [Light],
 }
 
-impl Scene {
+impl<'a> Scene<'a> {
     pub fn intersect(&self, ray: Ray) -> Option<Surfel> {
         self.primitives.intersect(ray)
     }

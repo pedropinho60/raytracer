@@ -10,7 +10,7 @@ pub enum Camera {
 }
 
 impl Camera {
-    pub fn generate_ray(&self, row: u16, col: u16, width: u16, height: u16) -> Ray {
+    pub fn generate_ray(&self, row: usize, col: usize, width: usize, height: usize) -> Ray {
         match self {
             Camera::Perspective(inner) => inner.generate_ray(row, col, width, height),
             Camera::Orthographic(inner) => inner.generate_ray(row, col, width, height),
@@ -63,7 +63,7 @@ impl PerspectiveCamera {
         }
     }
 
-    pub fn generate_ray(&self, row: u16, col: u16, width: u16, height: u16) -> Ray {
+    pub fn generate_ray(&self, row: usize, col: usize, width: usize, height: usize) -> Ray {
         let width = width as f32;
         let height = height as f32;
 
@@ -105,7 +105,7 @@ impl OrthographicCamera {
         }
     }
 
-    pub fn generate_ray(&self, row: u16, col: u16, width: u16, height: u16) -> Ray {
+    pub fn generate_ray(&self, row: usize, col: usize, width: usize, height: usize) -> Ray {
         let width = width as f32;
         let height = height as f32;
 

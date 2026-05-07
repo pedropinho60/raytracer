@@ -45,12 +45,12 @@ impl CheckerboardMaterial {
 pub struct BlinnPhongMaterial {
     pub diffuse: Color,
     pub specular: Color,
-    pub glossiness: f32,
+    pub glossiness: u16,
     pub ambient: Color,
 }
 
 impl BlinnPhongMaterial {
-    pub fn new(diffuse: Color, specular: Color, glossiness: f32, ambient: Color) -> Self {
+    pub fn new(diffuse: Color, specular: Color, glossiness: u16, ambient: Color) -> Self {
         Self {
             diffuse,
             specular,

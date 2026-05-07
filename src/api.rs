@@ -48,14 +48,14 @@ impl RenderState {
     }
 
     pub fn execute_render(&mut self) -> Result<()> {
-        let mut film = self
+        let film = self
             .current_film
-            .clone()
+            .as_mut()
             .ok_or(SceneError::Render("cannot render without a film"))?;
 
         let background = self
             .current_background
-            .clone()
+            .as_ref()
             .ok_or(SceneError::Render("cannot render without a background"))?;
 
         let camera_args = self
@@ -74,14 +74,14 @@ impl RenderState {
 
         let scene = Scene {
             background,
-            materials: self.materials.clone(),
-            primitives: self.primitives.clone(),
-            lights: self.lights.clone(),
+            materials: &self.materials,
+            primitives: &self.primitives,
+            lights: &self.lights,
         };
 
         let mut integrator = integrator_type.to_integrator();
 
-        integrator.render(&mut camera, &scene, &mut film)?;
+        integrator.render(&mut camera, &scene, film)?;
 
         Ok(())
     }

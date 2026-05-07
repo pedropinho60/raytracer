@@ -1,6 +1,22 @@
-use std::ops::{Add, AddAssign, Mul};
+use std::{
+    ops::{Add, AddAssign, Mul},
+    sync::OnceLock,
+};
 
 use serde::Deserialize;
+
+static GAMMA_LUT: OnceLock<[u8; 4096]> = OnceLock::new();
+
+pub fn get_gamma_lut() -> &'static [u8; 4096] {
+    GAMMA_LUT.get_or_init(|| {
+        std::array::from_fn(|i| {
+            let val = (i as f32) / 4095.0;
+            let gamma_corrected = val.powf(1.0 / 2.2);
+
+            (gamma_corrected * 255.99) as u8
+        })
+    })
+}
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Color {
@@ -28,19 +44,9 @@ impl Color {
 
     pub fn clamp(self, min: f32, max: f32) -> Color {
         Self {
-            red: self.red.clamp(min, max),
-            green: self.green.clamp(min, max),
-            blue: self.blue.clamp(min, max),
-        }
-    }
-
-    pub fn gamma_corrected(self) -> Color {
-        let gamma = 1.0 / 2.2;
-
-        Color {
-            red: self.red.powf(gamma),
-            green: self.green.powf(gamma),
-            blue: self.blue.powf(gamma),
+            red: self.red.max(min).min(max),
+            green: self.green.max(min).min(max),
+            blue: self.blue.max(min).min(max),
         }
     }
 }
@@ -127,6 +133,16 @@ pub struct ColorU8 {
     pub red: u8,
     pub green: u8,
     pub blue: u8,
+}
+
+impl From<Color> for ColorU8 {
+    fn from(value: Color) -> Self {
+        Self {
+            red: (value.red * 255.99) as u8,
+            green: (value.green * 255.99) as u8,
+            blue: (value.blue * 255.99) as u8,
+        }
+    }
 }
 
 impl<'de> Deserialize<'de> for ColorU8 {

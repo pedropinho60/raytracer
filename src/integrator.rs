@@ -50,26 +50,28 @@ impl SamplerIntegrator {
     pub fn render(&mut self, camera: &mut Camera, scene: &Scene, film: &mut Film) -> Result<()> {
         self.preprocess();
 
-        let width = film.width();
-        let height = film.height();
+        let width = film.width() as usize;
+        let height = film.height() as usize;
+
+        let inv_width = (width - 1) as f32;
+        let inv_height = (height - 1) as f32;
 
         let pixels = film.pixels_mut();
 
         pixels
-            .par_iter_mut()
+            .par_chunks_exact_mut(width)
             .enumerate()
-            .for_each(|(index, color)| {
-                let col = index % width as usize;
-                let row = index / width as usize;
+            .for_each(|(row, buf)| {
+                let normalized_row = row as f32 / inv_height;
+                for (col, pixel) in buf.iter_mut().enumerate() {
+                    let ray = camera.generate_ray(row, col, width, height);
 
-                let ray = camera.generate_ray(row as u16, col as u16, width, height);
+                    let normalized_col = col as f32 / inv_width;
 
-                let normalized_row = row as f32 / (height - 1) as f32;
-                let normalized_col = col as f32 / (width - 1) as f32;
-
-                *color = self
-                    .li(ray, scene)
-                    .unwrap_or_else(|| scene.background.sample(normalized_row, normalized_col));
+                    *pixel = self
+                        .li(ray, scene)
+                        .unwrap_or_else(|| scene.background.sample(normalized_row, normalized_col));
+                }
             });
 
         film.write_image()?;
@@ -158,7 +160,7 @@ impl BlinnPhongIntegrator {
 
         let mut color = Color::default();
 
-        for light in &scene.lights {
+        for light in scene.lights {
             let (l, i) = match light {
                 Light::Ambient(ambient_light) => {
                     color += ambient_light.intensity * ka;
@@ -181,7 +183,7 @@ impl BlinnPhongIntegrator {
             let h = (v + l).normalize();
 
             let diffuse_term = i * kd * f32::max(n.dot(l), 0.0);
-            let specular_term = i * ks * f32::max(n.dot(h), 0.0).powf(g);
+            let specular_term = i * ks * f32::max(n.dot(h), 0.0).powi(g as i32);
 
             color += diffuse_term + specular_term;
         }

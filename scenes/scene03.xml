@@ -2,7 +2,7 @@
     <lookat look_from="0 0 -7" look_at="0 0 0" up="0 1 0" />
     <camera type="orthographic" screen_window="-5.3 5.3 -4 4"/>
     <integrator type="flat" />
-    <film type="image" w_res="1920" h_res="1080" filename="simple_bkg.png" img_type="png" gamma_corrected="false" dithering="none"/>
+    <film type="image" w_res="1920" h_res="1080" filename="simple_bkg.png" img_type="png" gamma_corrected="true" dithering="none"/>
     <world_begin/>
         <background type="4_colors" bl="0 0 0" tl="255 255 255" tr="255 255 255" br="0 0 0" />
     <world_end/>

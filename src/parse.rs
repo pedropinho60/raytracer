@@ -333,7 +333,7 @@ pub enum MaterialType {
         #[serde(rename = "@specular")]
         specular: Color,
         #[serde(rename = "@glossiness", deserialize_with = "parse_from_string")]
-        glossiness: f32,
+        glossiness: u16,
     },
 }
 

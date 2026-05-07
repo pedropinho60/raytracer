@@ -4,9 +4,10 @@ use std::{
     path::PathBuf,
 };
 
+use rayon::prelude::*;
 use serde::Deserialize;
 
-use crate::color::Color;
+use crate::color::{self, Color, ColorU8};
 use crate::{Result, dithering::Dithering};
 
 #[derive(Debug, Clone, Copy, Deserialize, PartialEq)]
@@ -65,24 +66,35 @@ impl Film {
         let file = File::create(&self.filename)?;
         let w = BufWriter::new(file);
 
-        let mut final_pixels = Vec::with_capacity(self.buffer.len() * 3);
+        let gamma_lut = color::get_gamma_lut();
 
-        for (index, color) in self.buffer.iter().enumerate() {
-            let mut final_color = color.clamp(0.0, 1.0);
+        let width = self.width as usize;
 
-            if self.gamma_corrected {
-                final_color = final_color.gamma_corrected();
-            }
+        let final_pixels: Vec<u8> = self
+            .buffer
+            .par_iter()
+            .enumerate()
+            .flat_map_iter(|(i, color)| {
+                let mut color_to_process = color.clamp(0.0, 1.0);
 
-            let col = index % self.width as usize;
-            let row = index / self.width as usize;
+                let row = i / width;
+                let col = i % width;
 
-            final_color = self.dithering.get_color(row, col, final_color);
+                color_to_process = self.dithering.get_color(row, col, color_to_process);
 
-            final_pixels.push((final_color.red * 255.0) as u8);
-            final_pixels.push((final_color.green * 255.0) as u8);
-            final_pixels.push((final_color.blue * 255.0) as u8);
-        }
+                let final_color = if self.gamma_corrected {
+                    ColorU8 {
+                        red: gamma_lut[(color_to_process.red * 4095.0) as usize],
+                        green: gamma_lut[(color_to_process.green * 4095.0) as usize],
+                        blue: gamma_lut[(color_to_process.blue * 4095.0) as usize],
+                    }
+                } else {
+                    color_to_process.into()
+                };
+
+                [final_color.red, final_color.green, final_color.blue]
+            })
+            .collect();
 
         match self.img_type {
             ImageType::Ppm => self.write_ppm(w, &final_pixels),
@@ -91,13 +103,11 @@ impl Film {
     }
 
     fn write_ppm(&self, mut out: BufWriter<File>, buffer: &[u8]) -> Result<()> {
-        writeln!(out, "P3")?;
+        writeln!(out, "P6")?;
         writeln!(out, "{} {}", self.width, self.height)?;
         writeln!(out, "{}", 255.0)?;
 
-        for color in buffer {
-            writeln!(out, "{}", color)?;
-        }
+        out.write_all(buffer)?;
 
         Ok(())
     }
@@ -106,6 +116,8 @@ impl Film {
         let mut encoder = png::Encoder::new(out, self.width as u32, self.height as u32);
         encoder.set_color(png::ColorType::Rgb);
         encoder.set_depth(png::BitDepth::Eight);
+        encoder.set_compression(png::Compression::NoCompression);
+        encoder.set_filter(png::Filter::NoFilter);
 
         let mut writer = encoder.write_header()?;
 
