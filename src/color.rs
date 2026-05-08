@@ -38,6 +38,14 @@ impl Color {
         blue: 1.0,
     };
 
+    pub fn lerp(a: Color, b: Color, t: f32) -> Self {
+        Self {
+            red: (1. - t) * a.red + t * b.red,
+            green: (1. - t) * a.green + t * b.green,
+            blue: (1. - t) * a.blue + t * b.blue,
+        }
+    }
+
     pub fn luminosity(self) -> f32 {
         0.2126 * self.red + 0.7152 * self.green + 0.0722 * self.blue
     }
