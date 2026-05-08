@@ -27,6 +27,10 @@ impl Primitive {
             },
         ))
     }
+
+    pub fn intersect_any(&self, ray: Ray, t_min: f32, t_max: f32) -> bool {
+        self.shape.intersect_any(ray, t_min, t_max)
+    }
 }
 
 #[derive(Debug, Clone, From)]
@@ -40,6 +44,13 @@ impl Shape {
         match self {
             Shape::Sphere(inner) => inner.intersect(ray, t_min, t_max),
             Shape::Plane(inner) => inner.intersect(ray, t_min, t_max),
+        }
+    }
+
+    pub fn intersect_any(&self, ray: Ray, t_min: f32, t_max: f32) -> bool {
+        match self {
+            Shape::Sphere(inner) => inner.intersect_any(ray, t_min, t_max),
+            Shape::Plane(inner) => inner.intersect_any(ray, t_min, t_max),
         }
     }
 }
@@ -89,6 +100,34 @@ impl Sphere {
 
         Some((t, point, normal, from_behind))
     }
+
+    pub fn intersect_any(&self, ray: Ray, t_min: f32, t_max: f32) -> bool {
+        let oc = ray.origin - self.center;
+
+        let parallel_len = oc.dot(ray.direction);
+        let oc_perp = oc - ray.direction * parallel_len;
+
+        let delta = self.radius * self.radius - oc_perp.dot(oc_perp);
+
+        if delta < 0.0 {
+            return false;
+        }
+
+        let t_c = -parallel_len;
+        let t_half = delta.sqrt();
+
+        let t1 = t_c - t_half;
+        if t1 > t_min && t1 < t_max {
+            return true;
+        }
+
+        let t2 = t_c + t_half;
+        if t2 > t_min && t2 < t_max {
+            return true;
+        }
+
+        false
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -126,6 +165,18 @@ impl Plane {
 
         Some((t, point, normal, from_behind))
     }
+
+    pub fn intersect_any(&self, ray: Ray, t_min: f32, t_max: f32) -> bool {
+        let denom = self.normal.dot(ray.direction);
+
+        if denom.abs() < 1e-6 {
+            return false;
+        }
+
+        let t = (self.point - ray.origin).dot(self.normal) / denom;
+
+        t > t_min && t < t_max
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -147,7 +198,7 @@ impl AggregatePrimitive {
     pub fn intersect(&self, ray: Ray) -> Option<Surfel> {
         let mut closest_hit = None;
 
-        let t_min = 0.001;
+        let t_min = 0.01;
         let mut t_closest = f32::INFINITY;
 
         for primitive in &self.primitives {
@@ -158,5 +209,14 @@ impl AggregatePrimitive {
         }
 
         closest_hit
+    }
+
+    pub fn intersect_any(&self, ray: Ray, distance: f32) -> bool {
+        let t_min = 0.01;
+        let t_max = distance;
+
+        self.primitives
+            .iter()
+            .any(|p| p.intersect_any(ray, t_min, t_max))
     }
 }

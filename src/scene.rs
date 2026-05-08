@@ -15,6 +15,10 @@ impl<'a> Scene<'a> {
         self.primitives.intersect(ray)
     }
 
+    pub fn is_occluded(&self, ray: Ray, distance: f32) -> bool {
+        self.primitives.intersect_any(ray, distance)
+    }
+
     pub fn get_material(&self, index: usize) -> Option<&Material> {
         self.materials.get(index)
     }

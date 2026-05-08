@@ -173,10 +173,30 @@ impl BlinnPhongIntegrator {
                     let l = (point_light.point - isect.point).normalize();
                     let intensity = point_light.intensity * point_light.attenuation(distance);
 
+                    let shadow_ray = Ray {
+                        origin: isect.point,
+                        direction: l,
+                    };
+
+                    if scene.is_occluded(shadow_ray, distance) {
+                        continue;
+                    }
+
                     (l, intensity)
                 }
                 Light::Directional(directional_light) => {
-                    (-directional_light.direction, directional_light.intensity)
+                    let l = -directional_light.direction;
+
+                    let shadow_ray = Ray {
+                        origin: isect.point,
+                        direction: l,
+                    };
+
+                    if scene.is_occluded(shadow_ray, f32::INFINITY) {
+                        continue;
+                    }
+
+                    (l, directional_light.intensity)
                 }
             };
 
