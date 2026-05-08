@@ -170,7 +170,7 @@ impl BlinnPhongIntegrator {
                     let direction = point_light.point - isect.point;
                     let distance = direction.dot(direction).sqrt();
 
-                    let l = (point_light.point - isect.point).normalize();
+                    let l = direction.normalize();
                     let intensity = point_light.intensity * point_light.attenuation(distance);
 
                     let shadow_ray = Ray {
@@ -197,6 +197,38 @@ impl BlinnPhongIntegrator {
                     }
 
                     (l, directional_light.intensity)
+                }
+                Light::Spotlight(spotlight) => {
+                    let direction = spotlight.point - isect.point;
+                    let distance = direction.dot(direction).sqrt();
+
+                    let l = direction.normalize();
+
+                    let theta = l.dot(-spotlight.direction);
+
+                    if theta < spotlight.cutoff_cos {
+                        continue;
+                    }
+
+                    let intensity = if theta < spotlight.falloff_cos {
+                        let epsilon = spotlight.falloff_cos - spotlight.cutoff_cos;
+                        let t = (theta - spotlight.cutoff_cos) / epsilon;
+
+                        Color::lerp(Color::BLACK, spotlight.intensity, t)
+                    } else {
+                        spotlight.intensity
+                    };
+
+                    let shadow_ray = Ray {
+                        origin: isect.point,
+                        direction: l,
+                    };
+
+                    if scene.is_occluded(shadow_ray, distance) {
+                        continue;
+                    }
+
+                    (l, intensity)
                 }
             };
 

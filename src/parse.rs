@@ -11,7 +11,7 @@ use crate::{
     dithering::{BayerDithering, BlueNoiseDithering, Dithering, WhiteNoiseDithering},
     film::ImageType,
     integrator::{BlinnPhongIntegrator, Integrator, NormalMapIntegrator, RayCastIntegrator},
-    light::{AmbientLight, Attenuation, DirectionalLight, Light, PointLight},
+    light::{AmbientLight, Attenuation, DirectionalLight, Light, PointLight, Spotlight},
     material::{BlinnPhongMaterial, CheckerboardMaterial, Material},
     primitive::{Plane, Primitive, Sphere},
 };
@@ -235,6 +235,19 @@ pub enum LightType {
         #[serde(rename = "@to")]
         to: Vec3String,
     },
+    #[serde(rename = "spot")]
+    Spotlight {
+        #[serde(rename = "@I")]
+        intensity: Color,
+        #[serde(rename = "@from")]
+        from: Vec3String,
+        #[serde(rename = "@to")]
+        to: Vec3String,
+        #[serde(rename = "@cutoff", deserialize_with = "parse_from_string")]
+        cutoff: f32,
+        #[serde(rename = "@falloff", deserialize_with = "parse_from_string")]
+        falloff: f32,
+    },
 }
 
 impl LightType {
@@ -267,8 +280,26 @@ impl LightType {
                     intensity: intensity * scale,
                     direction: (to - from).normalize(),
                 }
+                .into()
             }
-            .into(),
+            LightType::Spotlight {
+                intensity,
+                from,
+                to,
+                cutoff,
+                falloff,
+            } => {
+                let to: Vec3A = to.into();
+                let from: Vec3A = from.into();
+                Spotlight {
+                    intensity,
+                    point: from,
+                    direction: (to - from).normalize(),
+                    cutoff_cos: cutoff.to_radians().cos(),
+                    falloff_cos: falloff.to_radians().cos(),
+                }
+                .into()
+            }
         }
     }
 }

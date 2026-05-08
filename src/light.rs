@@ -9,6 +9,7 @@ pub enum Light {
     Point(PointLight),
     Directional(DirectionalLight),
     Ambient(AmbientLight),
+    Spotlight(Spotlight),
 }
 
 #[derive(Clone)]
@@ -35,6 +36,15 @@ pub struct DirectionalLight {
 #[derive(Clone)]
 pub struct AmbientLight {
     pub intensity: Color,
+}
+
+#[derive(Clone)]
+pub struct Spotlight {
+    pub intensity: Color,
+    pub point: Vec3A,
+    pub direction: Vec3A,
+    pub cutoff_cos: f32,
+    pub falloff_cos: f32,
 }
 
 #[derive(Debug, Clone, Copy)]
