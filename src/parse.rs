@@ -365,6 +365,8 @@ pub enum MaterialType {
         specular: Color,
         #[serde(rename = "@glossiness", deserialize_with = "parse_from_string")]
         glossiness: u16,
+        #[serde(rename = "@mirror", default)]
+        mirror: Color,
     },
 }
 
@@ -382,7 +384,8 @@ impl MaterialType {
                 diffuse,
                 specular,
                 glossiness,
-            } => BlinnPhongMaterial::new(diffuse, specular, glossiness, ambient).into(),
+                mirror,
+            } => BlinnPhongMaterial::new(diffuse, specular, glossiness, ambient, mirror).into(),
         }
     }
 }
@@ -393,7 +396,10 @@ impl MaterialType {
 pub enum IntegratorType {
     Flat,
     NormalMap,
-    BlinnPhong,
+    BlinnPhong {
+        #[serde(rename = "@depth", deserialize_with = "parse_from_string")]
+        depth: u8,
+    },
 }
 
 impl IntegratorType {
@@ -401,7 +407,7 @@ impl IntegratorType {
         match self {
             IntegratorType::Flat => RayCastIntegrator.into(),
             IntegratorType::NormalMap => NormalMapIntegrator.into(),
-            IntegratorType::BlinnPhong => BlinnPhongIntegrator.into(),
+            IntegratorType::BlinnPhong { depth } => BlinnPhongIntegrator::new(depth).into(),
         }
     }
 }

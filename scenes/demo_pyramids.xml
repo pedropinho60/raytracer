@@ -4,7 +4,7 @@
     <!-- <lookat look_from="0 10 2" look_at="0 1 2" up="0 0 1" /> -->
     <!-- <camera type="orthographic" screen_window=" -16 16 -10 10" />  -->
     <integrator type="blinn_phong" depth="3" />
-    <film type="image" w_res="1920" h_res="1200" filename="all_lights.png" img_type="png" gamma_corrected="false" />
+    <film type="image" w_res="1920" h_res="1080" filename="all_lights.png" img_type="png" gamma_corrected="false" />
 
     <!-- Objects storage -->
     <aggregator type="list"/>

@@ -202,7 +202,9 @@ impl AggregatePrimitive {
         let mut t_closest = f32::INFINITY;
 
         for primitive in &self.primitives {
-            if let Some((t, surfel)) = primitive.intersect(ray, t_min, t_closest) {
+            if let Some((t, surfel)) = primitive.intersect(ray, t_min, t_closest)
+                && !surfel.from_behind
+            {
                 t_closest = t;
                 closest_hit = Some(surfel);
             }

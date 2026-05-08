@@ -18,7 +18,7 @@ pub fn get_gamma_lut() -> &'static [u8; 4096] {
     })
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct Color {
     pub red: f32,
     pub green: f32,

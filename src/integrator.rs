@@ -74,8 +74,6 @@ impl SamplerIntegrator {
                 }
             });
 
-        film.write_image()?;
-
         Ok(())
     }
 
@@ -83,7 +81,7 @@ impl SamplerIntegrator {
         match self {
             SamplerIntegrator::RayCast(inner) => inner.li(ray, scene),
             SamplerIntegrator::NormalMap(inner) => inner.li(ray, scene),
-            SamplerIntegrator::BlinnPhong(inner) => inner.li(ray, scene),
+            SamplerIntegrator::BlinnPhong(inner) => inner.li(ray, scene, 0),
         }
     }
 
@@ -134,17 +132,19 @@ impl NormalMapIntegrator {
     }
 }
 
-pub struct BlinnPhongIntegrator;
+pub struct BlinnPhongIntegrator {
+    max_depth: u8,
+}
 
 impl BlinnPhongIntegrator {
-    pub fn li(&self, ray: Ray, scene: &Scene) -> Option<Color> {
+    pub fn new(depth: u8) -> Self {
+        Self { max_depth: depth }
+    }
+
+    pub fn li(&self, ray: Ray, scene: &Scene, depth: u8) -> Option<Color> {
         let isect = scene.intersect(ray)?;
 
-        if isect.from_behind {
-            return None;
-        }
-
-        let material = scene.get_material(isect.material_id)?;
+        let material = scene.get_material(isect.material_id).unwrap();
 
         let Material::BlinnPhong(m) = material else {
             return None;
@@ -154,6 +154,7 @@ impl BlinnPhongIntegrator {
         let ks = m.specular;
         let g = m.glossiness;
         let ka = m.ambient;
+        let km = m.mirror;
 
         let v = -ray.direction.normalize();
         let n = isect.normal.normalize();
@@ -238,6 +239,18 @@ impl BlinnPhongIntegrator {
             let specular_term = i * ks * f32::max(n.dot(h), 0.0).powi(g as i32);
 
             color += diffuse_term + specular_term;
+        }
+
+        let reflected_ray = Ray {
+            origin: isect.point,
+            direction: ray.direction - 2.0 * ray.direction.dot(n) * n,
+        };
+
+        if depth < self.max_depth && km != Color::BLACK {
+            color += km
+                * self
+                    .li(reflected_ray, scene, depth + 1)
+                    .unwrap_or(Color::BLACK);
         }
 
         Some(color)

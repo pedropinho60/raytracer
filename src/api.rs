@@ -8,7 +8,7 @@ use crate::{
     primitive::AggregatePrimitive,
     scene::Scene,
 };
-use std::{collections::HashMap, fs, path::Path};
+use std::{collections::HashMap, fs, path::Path, time::Instant};
 
 use quick_xml::de::from_str;
 
@@ -81,7 +81,16 @@ impl RenderState {
 
         let mut integrator = integrator_type.to_integrator();
 
+        let start = Instant::now();
         integrator.render(&mut camera, &scene, film)?;
+        let elapsed = start.elapsed();
+
+        println!("Render time: {:?}", elapsed);
+
+        let start = Instant::now();
+        film.write_image()?;
+        let elapsed = start.elapsed();
+        println!("Time to write image: {:?}", elapsed);
 
         Ok(())
     }

@@ -47,15 +47,23 @@ pub struct BlinnPhongMaterial {
     pub specular: Color,
     pub glossiness: u16,
     pub ambient: Color,
+    pub mirror: Color,
 }
 
 impl BlinnPhongMaterial {
-    pub fn new(diffuse: Color, specular: Color, glossiness: u16, ambient: Color) -> Self {
+    pub fn new(
+        diffuse: Color,
+        specular: Color,
+        glossiness: u16,
+        ambient: Color,
+        mirror: Color,
+    ) -> Self {
         Self {
             diffuse,
             specular,
             glossiness,
             ambient,
+            mirror,
         }
     }
 }
