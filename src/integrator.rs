@@ -116,13 +116,7 @@ impl NormalMapIntegrator {
     pub fn li(&self, ray: Ray, scene: &Scene) -> Option<Color> {
         let isect = scene.intersect(ray)?;
 
-        let mut normal = if isect.from_behind {
-            isect.normal
-        } else {
-            -isect.normal
-        };
-
-        normal += Vec3A::new(1.0, 1.0, 1.0) / 2.0;
+        let normal = (isect.normal + Vec3A::new(1.0, 1.0, 1.0)) / 2.0;
 
         Some(Color {
             red: normal.x,
