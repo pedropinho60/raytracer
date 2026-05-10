@@ -1,0 +1,131 @@
+ <RT3>
+    <lookat look_from="-3 4 -6" look_at="3 1.5808802 3" up="0 1 0" />
+    <camera type="perspective" fovy="45" />
+    <integrator type="blinn_phong" depth="3" />
+    <film type="image" w_res="1920" h_res="1080" filename="sphere_pyramid.png" img_type="png" gamma_corrected="false" />
+
+    <aggregator type="list"/>
+
+    <world_begin/>
+        <!-- The Background -->
+        <background type="4_colors" bl="176 214 175" tl="4 99 202" tr="4 99 202" br="176 214 175" />
+
+        <!-- Lights -->
+        <light_source type="ambient" I="0.1 0.1 0.1" scale="0.5 0.5 0.5" />
+        <light_source type="directional" I="0.9 0.9 0.9" scale="0.6 0.6 0.6" from="1 1.45 -3" to="0 0 1" />
+        <light_source type="point" I="0.95 0.9 0.8" scale="0.8 0.8 0.8" from="0 3.1617603 -1" />
+
+        <!-- Material Library -->
+        <make_named_material type="blinn" name="gold"     ambient="0.4 0.4 0.4" diffuse ="1 0.65 0.0"   specular ="0.8 0.6 0.2"  glossiness ="256" mirror = "0.8 0.8 0.8"/>
+        <make_named_material type="blinn" name="grey"     ambient="0.1 0.1 0.1" diffuse ="0.9 0.9 0.9"  specular ="0 0 0"        glossiness ="0"/>
+        <make_named_material type="blinn" name="redish"   ambient="0.6 0.6 0.6" diffuse ="0.9 0.2 0.1"  specular ="0.8 0.8 0.8"  glossiness ="64"/>
+        <make_named_material type="blinn" name="greenish" ambient="0.6 0.6 0.6" diffuse ="0.2 0.9 0.2"  specular ="0.8 0.8 0.8"  glossiness ="256"/>
+        <make_named_material type="blinn" name="blueish"  ambient="0.6 0.6 0.6" diffuse ="0.1 0.2 0.9"  specular ="0.8 0.8 0.8"  glossiness ="16"/>
+        <make_named_material type="blinn" name="jade"     ambient="0.6 0.6 0.6" diffuse ="0 0.65 0.29"    specular ="0.8 0.8 0.8" mirror ="0.4 0.4 0.4" glossiness ="128"/>
+
+        <!-- Objects -->
+
+        <named_material name="grey"/>
+        <object type="plane" point="0 0 0" normal="0 1 0" />
+
+        <named_material name="jade"/>
+        <object type="sphere" center="0 0.5 0" radius="0.5"  />
+        <object type="sphere" center="0 0.5 1" radius="0.5"  />
+        <object type="sphere" center="0 0.5 2" radius="0.5"  />
+        <object type="sphere" center="0 0.5 3" radius="0.5"  />
+        <object type="sphere" center="0 0.5 4" radius="0.5"  />
+        <object type="sphere" center="0 0.5 5" radius="0.5"  />
+        <object type="sphere" center="1 0.5 0" radius="0.5"  />
+        <object type="sphere" center="1 0.5 1" radius="0.5"  />
+        <object type="sphere" center="1 0.5 2" radius="0.5"  />
+        <object type="sphere" center="1 0.5 3" radius="0.5"  />
+        <object type="sphere" center="1 0.5 4" radius="0.5"  />
+        <object type="sphere" center="1 0.5 5" radius="0.5"  />
+        <object type="sphere" center="2 0.5 0" radius="0.5"  />
+        <object type="sphere" center="2 0.5 1" radius="0.5"  />
+        <object type="sphere" center="2 0.5 2" radius="0.5"  />
+        <object type="sphere" center="2 0.5 3" radius="0.5"  />
+        <object type="sphere" center="2 0.5 4" radius="0.5"  />
+        <object type="sphere" center="2 0.5 5" radius="0.5"  />
+        <object type="sphere" center="3 0.5 0" radius="0.5"  />
+        <object type="sphere" center="3 0.5 1" radius="0.5"  />
+        <object type="sphere" center="3 0.5 2" radius="0.5"  />
+        <object type="sphere" center="3 0.5 3" radius="0.5"  />
+        <object type="sphere" center="3 0.5 4" radius="0.5"  />
+        <object type="sphere" center="3 0.5 5" radius="0.5"  />
+        <object type="sphere" center="4 0.5 0" radius="0.5"  />
+        <object type="sphere" center="4 0.5 1" radius="0.5"  />
+        <object type="sphere" center="4 0.5 2" radius="0.5"  />
+        <object type="sphere" center="4 0.5 3" radius="0.5"  />
+        <object type="sphere" center="4 0.5 4" radius="0.5"  />
+        <object type="sphere" center="4 0.5 5" radius="0.5"  />
+        <object type="sphere" center="5 0.5 0" radius="0.5"  />
+        <object type="sphere" center="5 0.5 1" radius="0.5"  />
+        <object type="sphere" center="5 0.5 2" radius="0.5"  />
+        <object type="sphere" center="5 0.5 3" radius="0.5"  />
+        <object type="sphere" center="5 0.5 4" radius="0.5"  />
+        <object type="sphere" center="5 0.5 5" radius="0.5"  />
+
+        <object type="sphere" center="0.5 1.2071068 0.5" radius="0.5"  />
+        <object type="sphere" center="0.5 1.2071068 1.5" radius="0.5"  />
+        <object type="sphere" center="0.5 1.2071068 2.5" radius="0.5"  />
+        <object type="sphere" center="0.5 1.2071068 3.5" radius="0.5"  />
+        <object type="sphere" center="0.5 1.2071068 4.5" radius="0.5"  />
+        <object type="sphere" center="1.5 1.2071068 0.5" radius="0.5"  />
+        <object type="sphere" center="1.5 1.2071068 1.5" radius="0.5"  />
+        <object type="sphere" center="1.5 1.2071068 2.5" radius="0.5"  />
+        <object type="sphere" center="1.5 1.2071068 3.5" radius="0.5"  />
+        <object type="sphere" center="1.5 1.2071068 4.5" radius="0.5"  />
+        <object type="sphere" center="2.5 1.2071068 0.5" radius="0.5"  />
+        <object type="sphere" center="2.5 1.2071068 1.5" radius="0.5"  />
+        <object type="sphere" center="2.5 1.2071068 2.5" radius="0.5"  />
+        <object type="sphere" center="2.5 1.2071068 3.5" radius="0.5"  />
+        <object type="sphere" center="2.5 1.2071068 4.5" radius="0.5"  />
+        <object type="sphere" center="3.5 1.2071068 0.5" radius="0.5"  />
+        <object type="sphere" center="3.5 1.2071068 1.5" radius="0.5"  />
+        <object type="sphere" center="3.5 1.2071068 2.5" radius="0.5"  />
+        <object type="sphere" center="3.5 1.2071068 3.5" radius="0.5"  />
+        <object type="sphere" center="3.5 1.2071068 4.5" radius="0.5"  />
+        <object type="sphere" center="4.5 1.2071068 0.5" radius="0.5"  />
+        <object type="sphere" center="4.5 1.2071068 1.5" radius="0.5"  />
+        <object type="sphere" center="4.5 1.2071068 2.5" radius="0.5"  />
+        <object type="sphere" center="4.5 1.2071068 3.5" radius="0.5"  />
+        <object type="sphere" center="4.5 1.2071068 4.5" radius="0.5"  />
+
+        <object type="sphere" center="1 1.9142135 1" radius="0.5"  />
+        <object type="sphere" center="1 1.9142135 2" radius="0.5"  />
+        <object type="sphere" center="1 1.9142135 3" radius="0.5"  />
+        <object type="sphere" center="1 1.9142135 4" radius="0.5"  />
+        <object type="sphere" center="2 1.9142135 1" radius="0.5"  />
+        <object type="sphere" center="2 1.9142135 2" radius="0.5"  />
+        <object type="sphere" center="2 1.9142135 3" radius="0.5"  />
+        <object type="sphere" center="2 1.9142135 4" radius="0.5"  />
+        <object type="sphere" center="3 1.9142135 1" radius="0.5"  />
+        <object type="sphere" center="3 1.9142135 2" radius="0.5"  />
+        <object type="sphere" center="3 1.9142135 3" radius="0.5"  />
+        <object type="sphere" center="3 1.9142135 4" radius="0.5"  />
+        <object type="sphere" center="4 1.9142135 1" radius="0.5"  />
+        <object type="sphere" center="4 1.9142135 2" radius="0.5"  />
+        <object type="sphere" center="4 1.9142135 3" radius="0.5"  />
+        <object type="sphere" center="4 1.9142135 4" radius="0.5"  />
+
+        <object type="sphere" center="1.5 2.6213202 1.5" radius="0.5"  />
+        <object type="sphere" center="1.5 2.6213202 2.5" radius="0.5"  />
+        <object type="sphere" center="1.5 2.6213202 3.5" radius="0.5"  />
+        <object type="sphere" center="2.5 2.6213202 1.5" radius="0.5"  />
+        <object type="sphere" center="2.5 2.6213202 2.5" radius="0.5"  />
+        <object type="sphere" center="2.5 2.6213202 3.5" radius="0.5"  />
+        <object type="sphere" center="3.5 2.6213202 1.5" radius="0.5"  />
+        <object type="sphere" center="3.5 2.6213202 2.5" radius="0.5"  />
+        <object type="sphere" center="3.5 2.6213202 3.5" radius="0.5"  />
+
+        <object type="sphere" center="2 3.328427 2" radius="0.5"  />
+        <object type="sphere" center="2 3.328427 3" radius="0.5"  />
+        <object type="sphere" center="3 3.328427 2" radius="0.5"  />
+        <object type="sphere" center="3 3.328427 3" radius="0.5"  />
+
+        <object type="sphere" center="2.5 4.035534 2.5" radius="0.5"  />
+
+
+    <world_end/>
+</RT3>

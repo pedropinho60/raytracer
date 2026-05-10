@@ -3,7 +3,7 @@
     <camera type="perspective" fovy="45" /> 
     <!-- <camera type="orthographic" screen_window="-4.444 4.444 -2.5 2.5" /> -->
     <integrator type="blinn_phong" depth="1" />
-    <film type="image" w_res="7680" h_res="4320" filename="sphere_pyramids.png" img_type="png" gamma_corrected="true"/>
+    <film type="image" w_res="1920" h_res="1080" filename="sphere_pyramids.png" img_type="png" gamma_corrected="true"/>
 
     <!-- Objects storage -->
     <aggregator type="list"/>
