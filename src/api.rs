@@ -81,16 +81,19 @@ impl RenderState {
 
         let mut integrator = integrator_type.to_integrator();
 
-        let start = Instant::now();
+        let render_start = Instant::now();
         integrator.render(&mut camera, &scene, film)?;
-        let elapsed = start.elapsed();
+        let image_elapsed = render_start.elapsed();
 
-        println!("Render time: {:?}", elapsed);
+        println!("Render time: {:?}", image_elapsed);
 
-        let start = Instant::now();
+        let image_start = Instant::now();
         film.write_image()?;
-        let elapsed = start.elapsed();
-        println!("Time to write image: {:?}", elapsed);
+        let image_elapsed = image_start.elapsed();
+        println!("Time to write image: {:?}", image_elapsed);
+
+        let total = render_start.elapsed();
+        println!("Total time: {:?}", total);
 
         Ok(())
     }
