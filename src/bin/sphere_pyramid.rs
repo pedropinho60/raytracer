@@ -34,13 +34,16 @@ fn main() -> anyhow::Result<()> {
 
     let light_height = (args.height as f32 * 2f32.sqrt() / 2.0 + 0.5) / 1.5;
 
+    let img_width = args.img_width;
+    let img_height = args.img_height;
+
     write!(
         w,
         r#" <RT3>
     <lookat look_from="{look_from_x} {look_from_y} {look_from_z}" look_at="{look_at_xz} {look_at_height} {look_at_xz}" up="0 1 0" />
     <camera type="perspective" fovy="45" />
     <integrator type="blinn_phong" depth="3" />
-    <film type="image" w_res="1920" h_res="1080" filename="sphere_pyramid.png" img_type="png" gamma_corrected="false" />
+    <film type="image" w_res="{img_width}" h_res="{img_height}" filename="sphere_pyramid.png" img_type="png" gamma_corrected="false" />
 
     <aggregator type="list"/>
 
