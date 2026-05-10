@@ -11,7 +11,6 @@ mod film;
 mod integrator;
 mod light;
 mod material;
-mod math;
 mod parse;
 mod primitive;
 mod ray;
