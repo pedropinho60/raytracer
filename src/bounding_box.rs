@@ -11,9 +11,15 @@ pub struct Interval {
 }
 
 impl Interval {
-    const EMPTY: Self = Interval {
+    pub const EMPTY: Self = Interval {
         min: f32::INFINITY,
         max: f32::NEG_INFINITY,
+    };
+
+    #[allow(dead_code)]
+    pub const UNIVERSE: Self = Interval {
+        min: f32::NEG_INFINITY,
+        max: f32::INFINITY,
     };
 
     pub fn new(min: f32, max: f32) -> Self {
@@ -27,6 +33,10 @@ impl Interval {
             min: f32::min(a.min, b.min),
             max: f32::max(a.max, b.max),
         }
+    }
+
+    pub fn size(&self) -> f32 {
+        self.max - self.min
     }
 
     #[allow(dead_code)]
@@ -50,6 +60,13 @@ impl BoundingBox {
         z: Interval::EMPTY,
     };
 
+    #[allow(dead_code)]
+    pub const UNIVERSE: Self = Self {
+        x: Interval::UNIVERSE,
+        y: Interval::UNIVERSE,
+        z: Interval::UNIVERSE,
+    };
+
     pub fn new(a: Vec3A, b: Vec3A) -> Self {
         Self {
             x: Interval::new(a.x, b.x),
@@ -63,6 +80,14 @@ impl BoundingBox {
             x: Interval::join(a.x, b.x),
             y: Interval::join(a.y, b.y),
             z: Interval::join(a.z, b.z),
+        }
+    }
+
+    pub fn longest_axis(&self) -> usize {
+        if self.x.size() > self.y.size() {
+            if self.x.size() > self.z.size() { 0 } else { 2 }
+        } else {
+            if self.y.size() > self.z.size() { 1 } else { 2 }
         }
     }
 

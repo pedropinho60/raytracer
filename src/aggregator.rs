@@ -122,7 +122,13 @@ struct BVHNode {
 
 impl BVHNode {
     pub fn new(list: &[Hittable]) -> Self {
-        let axis = rand::random::<u8>() % 3;
+        let mut bbox = BoundingBox::EMPTY;
+
+        for object in list {
+            bbox = BoundingBox::join(bbox, object.bounding_box());
+        }
+
+        let axis = bbox.longest_axis();
 
         let comparator = match axis {
             0 => Self::box_x_compare,
@@ -153,8 +159,6 @@ impl BVHNode {
                 right = Box::new(Self::new(&list[mid..]).into());
             }
         }
-
-        let bbox = BoundingBox::join(left.bounding_box(), right.bounding_box());
 
         Self { left, right, bbox }
     }
