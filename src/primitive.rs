@@ -1,7 +1,7 @@
 use derive_more::From;
 use glam::Vec3A;
 
-use crate::{ray::Ray, surfel::Surfel};
+use crate::{bounding_box::BoundingBox, hittable::Hit, ray::Ray, surfel::Surfel};
 
 #[derive(Debug, Clone)]
 pub struct Primitive {
@@ -13,8 +13,14 @@ impl Primitive {
     pub fn new(shape: Shape, material_id: usize) -> Self {
         Self { shape, material_id }
     }
+}
 
-    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Surfel)> {
+impl Hit for Primitive {
+    fn bounding_box(&self) -> BoundingBox {
+        self.shape.bounding_box()
+    }
+
+    fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Surfel)> {
         let (t, point, normal, from_behind) = self.shape.intersect(ray, t_min, t_max)?;
 
         Some((
@@ -28,7 +34,7 @@ impl Primitive {
         ))
     }
 
-    pub fn intersect_any(&self, ray: Ray, t_min: f32, t_max: f32) -> bool {
+    fn intersect_any(&self, ray: Ray, t_min: f32, t_max: f32) -> bool {
         self.shape.intersect_any(ray, t_min, t_max)
     }
 }
@@ -40,6 +46,12 @@ pub enum Shape {
 }
 
 impl Shape {
+    pub fn bounding_box(&self) -> BoundingBox {
+        match self {
+            Shape::Sphere(inner) => inner.bounding_box(),
+            Shape::Plane(inner) => inner.bounding_box(),
+        }
+    }
     pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Vec3A, Vec3A, bool)> {
         match self {
             Shape::Sphere(inner) => inner.intersect(ray, t_min, t_max),
@@ -62,6 +74,10 @@ pub struct Sphere {
 }
 
 impl Sphere {
+    pub fn bounding_box(&self) -> BoundingBox {
+        BoundingBox::new(self.center - self.radius, self.center + self.radius)
+    }
+
     pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Vec3A, Vec3A, bool)> {
         let o = ray.origin;
 
@@ -144,6 +160,10 @@ impl Plane {
         }
     }
 
+    pub fn bounding_box(&self) -> BoundingBox {
+        BoundingBox::new(Vec3A::NEG_INFINITY, Vec3A::INFINITY)
+    }
+
     pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Vec3A, Vec3A, bool)> {
         let denom = self.normal.dot(ray.direction);
 
@@ -176,49 +196,5 @@ impl Plane {
         let t = (self.point - ray.origin).dot(self.normal) / denom;
 
         t > t_min && t < t_max
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct AggregatePrimitive {
-    primitives: Vec<Primitive>,
-}
-
-impl AggregatePrimitive {
-    pub fn new() -> Self {
-        Self {
-            primitives: Vec::new(),
-        }
-    }
-
-    pub fn add(&mut self, primitive: Primitive) {
-        self.primitives.push(primitive);
-    }
-
-    pub fn intersect(&self, ray: Ray) -> Option<Surfel> {
-        let mut closest_hit = None;
-
-        let t_min = 0.01;
-        let mut t_closest = f32::INFINITY;
-
-        for primitive in &self.primitives {
-            if let Some((t, surfel)) = primitive.intersect(ray, t_min, t_closest)
-                && !surfel.from_behind
-            {
-                t_closest = t;
-                closest_hit = Some(surfel);
-            }
-        }
-
-        closest_hit
-    }
-
-    pub fn intersect_any(&self, ray: Ray, distance: f32) -> bool {
-        let t_min = 0.01;
-        let t_max = distance;
-
-        self.primitives
-            .iter()
-            .any(|p| p.intersect_any(ray, t_min, t_max))
     }
 }

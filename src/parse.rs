@@ -5,11 +5,13 @@ use serde::{Deserialize, Deserializer};
 
 use crate::{
     WindowSize,
+    aggregator::{PrimitiveAggregator, PrimitiveBVH, PrimitiveList},
     background::{Background, GradientBackground, SingleColorBackground},
     camera::{Camera, OrthographicCamera, PerspectiveCamera},
     color::{Color, ColorU8},
     dithering::{BayerDithering, BlueNoiseDithering, Dithering, WhiteNoiseDithering},
     film::ImageType,
+    hittable::Hittable,
     integrator::{BlinnPhongIntegrator, Integrator, NormalMapIntegrator, RayCastIntegrator},
     light::{AmbientLight, Attenuation, DirectionalLight, Light, PointLight, Spotlight},
     material::{BlinnPhongMaterial, CheckerboardMaterial, Material},
@@ -40,10 +42,7 @@ pub enum SceneCommand {
     Camera(CameraType),
     Integrator(IntegratorType),
     Film(FilmType),
-    Aggregator {
-        #[serde(rename = "@type")]
-        ty: String,
-    },
+    Aggregator(AggregatorType),
     WorldBegin,
     MakeNamedMaterial {
         #[serde(rename = "@name")]
@@ -408,6 +407,23 @@ impl IntegratorType {
             IntegratorType::Flat => RayCastIntegrator.into(),
             IntegratorType::NormalMap => NormalMapIntegrator.into(),
             IntegratorType::BlinnPhong { depth } => BlinnPhongIntegrator::new(depth).into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(tag = "@type")]
+#[serde(rename_all = "snake_case")]
+pub enum AggregatorType {
+    List,
+    Tree,
+}
+
+impl AggregatorType {
+    pub fn to_aggregator(self, list: &[Hittable]) -> PrimitiveAggregator {
+        match self {
+            AggregatorType::List => PrimitiveList::new(list).into(),
+            AggregatorType::Tree => PrimitiveBVH::new(list).into(),
         }
     }
 }

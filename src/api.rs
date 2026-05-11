@@ -2,10 +2,10 @@ use crate::{
     camera::Camera,
     cli::Cli,
     error::SceneError,
+    hittable::Hittable,
     light::Light,
     material::Material,
-    parse::{CameraArgs, CameraType, IntegratorType},
-    primitive::AggregatePrimitive,
+    parse::{AggregatorType, CameraArgs, CameraType, IntegratorType},
     scene::Scene,
 };
 use std::{collections::HashMap, fs, path::Path, time::Instant};
@@ -25,10 +25,11 @@ pub struct RenderState {
     pub current_camera_args: Option<CameraArgs>,
     pub current_camera_type: Option<CameraType>,
     pub current_integrator_type: Option<IntegratorType>,
+    pub current_aggregator_type: Option<AggregatorType>,
 
     pub materials: Vec<Material>,
     pub material_names: HashMap<String, usize>,
-    pub primitives: AggregatePrimitive,
+    pub primitives: Vec<Hittable>,
     pub lights: Vec<Light>,
 }
 
@@ -40,9 +41,10 @@ impl RenderState {
             current_camera_args: None,
             current_camera_type: None,
             current_integrator_type: None,
+            current_aggregator_type: None,
             materials: Vec::new(),
             material_names: HashMap::new(),
-            primitives: AggregatePrimitive::new(),
+            primitives: Vec::new(),
             lights: Vec::new(),
         }
     }
@@ -72,10 +74,16 @@ impl RenderState {
             .current_integrator_type
             .ok_or(SceneError::Render("cannot render without an integrator"))?;
 
+        let aggregator_type = self.current_aggregator_type.ok_or(SceneError::Render(
+            "cannot render without an object aggregator",
+        ))?;
+
+        let aggregator = aggregator_type.to_aggregator(&self.primitives);
+
         let scene = Scene {
             background,
             materials: &self.materials,
-            primitives: &self.primitives,
+            primitives: &aggregator,
             lights: &self.lights,
         };
 
@@ -151,7 +159,9 @@ fn parse_from_file(file_path: &Path, state: &mut RenderState) -> Result<()> {
                 let material_id = current_material
                     .ok_or(SceneError::MissingComponent("missing material for object"))?;
 
-                state.primitives.add(object_type.to_primitive(material_id))
+                state
+                    .primitives
+                    .push(object_type.to_primitive(material_id).into())
             }
             SceneCommand::Material(material_type) => {
                 let material = material_type.to_material();
@@ -191,7 +201,9 @@ fn parse_from_file(file_path: &Path, state: &mut RenderState) -> Result<()> {
                 parse_from_file(&resolved_path, state)?;
             }
             SceneCommand::LightSource(light_type) => state.lights.push(light_type.to_light()),
-            SceneCommand::Aggregator { ty: _ty } => (),
+            SceneCommand::Aggregator(aggregator_type) => {
+                state.current_aggregator_type = Some(aggregator_type)
+            }
         }
     }
 

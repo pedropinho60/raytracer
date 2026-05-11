@@ -1,13 +1,16 @@
 use serde::Deserialize;
 
+mod aggregator;
 mod api;
 mod background;
+mod bounding_box;
 mod camera;
 mod cli;
 mod color;
 mod dithering;
 mod error;
 mod film;
+mod hittable;
 mod integrator;
 mod light;
 mod material;

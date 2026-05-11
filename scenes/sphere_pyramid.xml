@@ -4,7 +4,7 @@
     <integrator type="blinn_phong" depth="3" />
     <film type="image" w_res="1920" h_res="1080" filename="sphere_pyramid.png" img_type="png" gamma_corrected="false" />
 
-    <aggregator type="list"/>
+    <aggregator type="tree"/>
 
     <world_begin/>
         <!-- The Background -->
