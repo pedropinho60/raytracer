@@ -60,7 +60,6 @@ impl BoundingBox {
         z: Interval::EMPTY,
     };
 
-    #[allow(dead_code)]
     pub const UNIVERSE: Self = Self {
         x: Interval::UNIVERSE,
         y: Interval::UNIVERSE,

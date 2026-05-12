@@ -161,7 +161,7 @@ impl Plane {
     }
 
     pub fn bounding_box(&self) -> BoundingBox {
-        BoundingBox::new(Vec3A::NEG_INFINITY, Vec3A::INFINITY)
+        BoundingBox::UNIVERSE
     }
 
     pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Vec3A, Vec3A, bool)> {
