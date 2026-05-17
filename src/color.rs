@@ -89,6 +89,14 @@ impl AddAssign<Color> for Color {
     }
 }
 
+impl AddAssign<&Color> for Color {
+    fn add_assign(&mut self, rhs: &Color) {
+        self.red += rhs.red;
+        self.green += rhs.green;
+        self.blue += rhs.blue;
+    }
+}
+
 impl Mul<Color> for Color {
     type Output = Color;
 

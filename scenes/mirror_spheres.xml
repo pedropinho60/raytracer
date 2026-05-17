@@ -1,0 +1,37 @@
+ <RT3>
+    <lookat look_from="2 1.1 10" look_at="2 0.85 0" up="0 1 0" />
+    <camera type="perspective" fovy="45" />
+    <integrator type="blinn_phong" depth="100" />
+    <film type="image" w_res="15360" h_res="8640" filename="mirror_spheres.png" img_type="png" gamma_corrected="false" />
+
+    <aggregator type="list"/>
+
+    <world_begin/>
+        <!-- The Background -->
+        <background type="4_colors" bl="248 237 219" tl="255 229 132" tr="255 229 132" br="248 237 219" />
+
+        <!-- Lights -->
+        <light_source type="ambient" I="0.1 0.1 0.1" scale="0.5 0.5 0.5" />
+        <light_source type="directional" I="0.9 0.9 0.9" scale="0.6 0.6 0.6" from="0 2 0" to="0 0 1" />
+        <light_source type="point" I="0.95 0.9 0.8" scale="0.8 0.8 0.8" from="0 1.2761424 -1" />
+
+        <!-- Material Library -->
+        <make_named_material type="blinn" name="grey"     ambient="0.1 0.1 0.1" diffuse ="0.9 0.9 0.9"  specular ="0 0 0"        glossiness ="0"/>
+        <make_named_material type="blinn" name="mirror"     ambient="0.1 0.1 0.1" diffuse ="0.9 0.9 0.9"   specular ="0.8 0.8 0.8"  glossiness ="64" mirror = "0.8 0.8 0.8"/>
+        <make_named_material type="blinn" name="redish"   ambient="0.6 0.6 0.6" diffuse ="0.9 0.2 0.1"  specular ="0.8 0.8 0.8"  glossiness ="64" mirror="0.8 0.8 0.8"/>
+
+        <!-- Objects -->
+
+        <material type="checkerboard" color_a="200 200 200" color_b="64 64 64" scale="2" />
+        <object type="plane" point="0 0.1 0" normal="0 1 0" />
+
+
+        <named_material name="mirror"/>
+        <object type="sphere" center="0 2.1 0" radius="2"/>
+
+        <named_material name="redish"/>
+        <object type="sphere" center="3 1.1 0" radius="1"/>
+
+
+    <world_end/>
+</RT3>

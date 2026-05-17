@@ -1,4 +1,4 @@
-use std::{path::PathBuf, str::FromStr};
+use std::{fmt::Display, path::PathBuf, str::FromStr};
 
 use glam::Vec3A;
 use serde::{Deserialize, Deserializer};
@@ -12,9 +12,11 @@ use crate::{
     dithering::{BayerDithering, BlueNoiseDithering, Dithering, WhiteNoiseDithering},
     film::ImageType,
     hittable::Hittable,
-    integrator::{BlinnPhongIntegrator, Integrator, NormalMapIntegrator, RayCastIntegrator},
+    integrator::{
+        BlinnPhongIntegrator, Integrator, NormalMapIntegrator, RayCastIntegrator, ToonIntegrator,
+    },
     light::{AmbientLight, Attenuation, DirectionalLight, Light, PointLight, Spotlight},
-    material::{BlinnPhongMaterial, CheckerboardMaterial, Material},
+    material::{BlinnPhongMaterial, CheckerboardMaterial, Material, ToonMaterial},
     primitive::{Plane, Primitive, Sphere},
 };
 
@@ -194,9 +196,10 @@ pub enum BackgroundType {
 impl BackgroundType {
     pub fn to_background(self) -> Background {
         match self {
-            BackgroundType::SingleColor { color } => {
-                SingleColorBackground::new(color.into()).into()
+            BackgroundType::SingleColor { color } => SingleColorBackground {
+                color: color.into(),
             }
+            .into(),
             BackgroundType::FourColors { bl, tl, tr, br } => {
                 GradientBackground::new(tl.into(), tr.into(), bl.into(), br.into()).into()
             }
@@ -339,7 +342,7 @@ impl ObjectType {
     }
 }
 
-#[derive(Debug, Clone, Copy, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "@type")]
 #[serde(rename_all = "snake_case")]
 pub enum MaterialType {
@@ -367,10 +370,14 @@ pub enum MaterialType {
         #[serde(rename = "@mirror", default)]
         mirror: Color,
     },
+    Toon {
+        #[serde(rename = "@color_map")]
+        color_map: Colors,
+    },
 }
 
 impl MaterialType {
-    pub fn to_material(self) -> Material {
+    pub fn into_material(self) -> Material {
         match self {
             MaterialType::Flat { color } => Material::Flat { kd: color.into() },
             MaterialType::Checkerboard {
@@ -385,11 +392,12 @@ impl MaterialType {
                 glossiness,
                 mirror,
             } => BlinnPhongMaterial::new(diffuse, specular, glossiness, ambient, mirror).into(),
+            MaterialType::Toon { color_map } => ToonMaterial::new(color_map.0, Color::BLACK).into(),
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "@type")]
 #[serde(rename_all = "snake_case")]
 pub enum IntegratorType {
@@ -399,14 +407,21 @@ pub enum IntegratorType {
         #[serde(rename = "@depth", deserialize_with = "parse_from_string")]
         depth: u8,
     },
+    Toon {
+        #[serde(rename = "@mapping_interval")]
+        mapping_interval: ArrayString<u8>,
+    },
 }
 
 impl IntegratorType {
-    pub fn to_integrator(self) -> Integrator {
+    pub fn to_integrator(&self) -> Integrator {
         match self {
             IntegratorType::Flat => RayCastIntegrator.into(),
             IntegratorType::NormalMap => NormalMapIntegrator.into(),
-            IntegratorType::BlinnPhong { depth } => BlinnPhongIntegrator::new(depth).into(),
+            IntegratorType::BlinnPhong { depth } => BlinnPhongIntegrator::new(*depth).into(),
+            IntegratorType::Toon { mapping_interval } => {
+                ToonIntegrator::new(mapping_interval.0.clone()).into()
+            }
         }
     }
 }
@@ -461,5 +476,63 @@ impl<'de> Deserialize<'de> for Vec3String {
 impl From<Vec3String> for Vec3A {
     fn from(value: Vec3String) -> Self {
         Self::new(value.x, value.y, value.z)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Colors(pub Vec<Color>);
+
+impl<'de> Deserialize<'de> for Colors {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+
+        let parts: Vec<_> = s.split_whitespace().collect();
+
+        if parts.len() % 3 != 0 {
+            return Err(serde::de::Error::custom(
+                "Expected a multiple of 3 color values",
+            ));
+        }
+
+        let mut colors = Vec::new();
+
+        for color in parts.chunks_exact(3) {
+            let red = color[0].parse().map_err(serde::de::Error::custom)?;
+            let green = color[1].parse().map_err(serde::de::Error::custom)?;
+            let blue = color[2].parse().map_err(serde::de::Error::custom)?;
+
+            colors.push(ColorU8 { red, green, blue }.into())
+        }
+
+        Ok(Self(colors))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ArrayString<T>(pub Vec<T>);
+
+impl<'de, T> Deserialize<'de> for ArrayString<T>
+where
+    T: FromStr,
+    T::Err: Display,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+
+        let parts: Vec<_> = s.split_whitespace().collect();
+
+        let x = parts
+            .iter()
+            .map(|a| a.parse::<T>())
+            .collect::<Result<Vec<T>, _>>()
+            .map_err(serde::de::Error::custom)?;
+
+        Ok(Self(x))
     }
 }

@@ -1,0 +1,16 @@
+<RT3>
+    <lookat look_from="0 0 -2" look_at="0 0 1" up="0 1 0" />
+    <camera type="orthographic" screen_window="-4.444 4.444 -2.5 2.5" />
+    <integrator type="toon" mapping_interval="5 45 65 75 85"/>
+    <film type="image" w_res="1920" h_res="1080" filename="toon.png" img_type="png" gamma_corrected="false" />
+    <aggregator type="list"/>
+    <world_begin/>
+        <!-- <background type="single_color" color="70 130 180"/> -->
+        <background type="single_color" color="255 255 255"/>
+        <!-- Lights -->
+        <light_source type="directional" I="0.9 0.9 0.9" scale="1 1 1" from="0.5 0.5 -1" to="0 0 0" world_radius="7" />
+        <!-- Material Library -->
+        <material type="toon" color_map="30 30 70 60 60 120 90 90 170 120 120 220 150 150 255" />
+        <object type="sphere" radius="0.4" center="0 0 1" />
+    <world_end/>
+</RT3>

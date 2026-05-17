@@ -8,6 +8,7 @@ pub enum Material {
     Flat { kd: Color },
     Checkerboard(CheckerboardMaterial),
     BlinnPhong(BlinnPhongMaterial),
+    Toon(ToonMaterial),
 }
 
 #[derive(Clone)]
@@ -65,5 +66,17 @@ impl BlinnPhongMaterial {
             ambient,
             mirror,
         }
+    }
+}
+
+#[derive(Clone)]
+pub struct ToonMaterial {
+    pub color_map: Vec<Color>,
+    pub ambient: Color,
+}
+
+impl ToonMaterial {
+    pub fn new(color_map: Vec<Color>, ambient: Color) -> Self {
+        Self { color_map, ambient }
     }
 }

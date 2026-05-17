@@ -1,0 +1,94 @@
+<RT3>
+        <!-- Top Row Objects -->
+        <named_material name="spec_0"/>
+        <object type="sphere" radius="0.4"  center="-5 1 1" />
+
+        <named_material name="spec_2"/>
+        <object type="sphere" radius="0.4" center="-4 1 1" />
+
+        <named_material name="spec_4"/>
+        <object type="sphere" radius="0.4" center="-3 1 1" />
+
+        <named_material name="spec_8"/>
+        <object type="sphere" radius="0.4"  center="-2 1 1" />
+
+        <named_material name="spec_16"/>
+        <object type="sphere" radius="0.4"  center="-1 1 1" />
+
+        <named_material name="spec_32"/>
+        <object type="sphere" radius="0.4"  center="0 1 1" />
+
+        <named_material name="spec_64"/>
+        <object type="sphere" radius="0.4"  center="1 1 1" />
+
+        <named_material name="spec_128"/>
+        <object type="sphere" radius="0.4"  center="2 1 1" />
+
+        <named_material name="spec_256"/>
+        <object type="sphere" radius="0.4"  center="3 1 1" />
+
+        <named_material name="spec_512"/>
+        <object type="sphere" radius="0.4"  center="4 1 1" />
+
+        <!-- Middle Row Objects -->
+        <named_material name="mirror_0"/>
+        <object type="sphere" radius="0.4" center="-5 0 1" />
+
+        <named_material name="mirror_2"/>
+        <object type="sphere" radius="0.4" center="-4 0 1" />
+
+        <named_material name="mirror_4"/>
+        <object type="sphere" radius="0.4" center="-3 0 1" />
+
+        <named_material name="mirror_8"/>
+        <object type="sphere" radius="0.4" center="-2 0 1" />
+
+        <named_material name="mirror_16"/>
+        <object type="sphere" radius="0.4" center="-1 0 1" />
+
+        <named_material name="mirror_32"/>
+        <object type="sphere" radius="0.4" center="0 0 1" />
+
+        <named_material name="mirror_64"/>
+        <object type="sphere" radius="0.4" center="1 0 1" />
+
+        <named_material name="mirror_128"/>
+        <object type="sphere" radius="0.4" center="2 0 1" />
+
+        <named_material name="mirror_256"/>
+        <object type="sphere" radius="0.4" center="3 0 1" />
+
+        <named_material name="mirror_512"/>
+        <object type="sphere" radius="0.4" center="4 0 1" />
+
+        <!-- Bottom Row Objects -->
+        <named_material name="mix_0"/>
+        <object type="sphere" radius="0.4" center="-5 -1 1" />
+
+        <named_material name="mix_2"/>
+        <object type="sphere" radius="0.4" center="-4 -1 1" />
+
+        <named_material name="mix_4"/>
+        <object type="sphere" radius="0.4" center="-3 -1 1" />
+
+        <named_material name="mix_8"/>
+        <object type="sphere" radius="0.4" center="-2 -1 1" />
+
+        <named_material name="mix_16"/>
+        <object type="sphere" radius="0.4" center="-1 -1 1" />
+
+        <named_material name="mix_32"/>
+        <object type="sphere" radius="0.4" center="0 -1 1" />
+
+        <named_material name="mix_64"/>
+        <object type="sphere" radius="0.4" center="1 -1 1" />
+
+        <named_material name="mix_128"/>
+        <object type="sphere" radius="0.4" center="2 -1 1" />
+
+        <named_material name="mix_256"/>
+        <object type="sphere" radius="0.4" center="3 -1 1" />
+
+        <named_material name="mix_512"/>
+        <object type="sphere" radius="0.4" center="4 -1 1" />
+</RT3>

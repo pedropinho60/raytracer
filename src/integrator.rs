@@ -39,11 +39,18 @@ impl From<BlinnPhongIntegrator> for Integrator {
     }
 }
 
+impl From<ToonIntegrator> for Integrator {
+    fn from(value: ToonIntegrator) -> Self {
+        Integrator::from(SamplerIntegrator::from(value))
+    }
+}
+
 #[derive(From)]
 pub enum SamplerIntegrator {
     RayCast(RayCastIntegrator),
     NormalMap(NormalMapIntegrator),
     BlinnPhong(BlinnPhongIntegrator),
+    Toon(ToonIntegrator),
 }
 
 impl SamplerIntegrator {
@@ -82,6 +89,7 @@ impl SamplerIntegrator {
             SamplerIntegrator::RayCast(inner) => inner.li(ray, scene),
             SamplerIntegrator::NormalMap(inner) => inner.li(ray, scene),
             SamplerIntegrator::BlinnPhong(inner) => inner.li(ray, scene, 0),
+            SamplerIntegrator::Toon(inner) => inner.li(ray, scene),
         }
     }
 
@@ -90,6 +98,7 @@ impl SamplerIntegrator {
             SamplerIntegrator::RayCast(_) => (),
             SamplerIntegrator::NormalMap(_) => (),
             SamplerIntegrator::BlinnPhong(_) => (),
+            SamplerIntegrator::Toon(_) => (),
         }
     }
 }
@@ -140,15 +149,28 @@ impl BlinnPhongIntegrator {
 
         let material = scene.get_material(isect.material_id).unwrap();
 
-        let Material::BlinnPhong(m) = material else {
-            return None;
+        let (kd, ks, g, ka, km) = match material {
+            Material::Flat { kd } => (*kd, Color::BLACK, 0, Color::BLACK, Color::BLACK),
+            Material::Checkerboard(m) => (
+                m.color_at(isect.point),
+                Color::BLACK,
+                0,
+                Color::BLACK,
+                Color::BLACK,
+            ),
+            Material::BlinnPhong(m) => (m.diffuse, m.specular, m.glossiness, m.ambient, m.mirror),
+            _ => return None,
         };
 
-        let kd = m.diffuse;
-        let ks = m.specular;
-        let g = m.glossiness;
-        let ka = m.ambient;
-        let km = m.mirror;
+        // let Material::BlinnPhong(m) = material else {
+        //     return None;
+        // };
+        //
+        // let kd = m.diffuse;
+        // let ks = m.specular;
+        // let g = m.glossiness;
+        // let ka = m.ambient;
+        // let km = m.mirror;
 
         let v = -ray.direction.normalize();
         let n = isect.normal.normalize();
@@ -230,7 +252,11 @@ impl BlinnPhongIntegrator {
             let h = (v + l).normalize();
 
             let diffuse_term = i * kd * f32::max(n.dot(l), 0.0);
-            let specular_term = i * ks * f32::max(n.dot(h), 0.0).powi(g as i32);
+            let specular_term = if g > 0 {
+                i * ks * f32::max(n.dot(h), 0.0).powi(g as i32)
+            } else {
+                Color::BLACK
+            };
 
             color += diffuse_term + specular_term;
         }
@@ -244,7 +270,88 @@ impl BlinnPhongIntegrator {
             color += km
                 * self
                     .li(reflected_ray, scene, depth + 1)
-                    .unwrap_or(Color::BLACK);
+                    .unwrap_or_else(|| scene.background.sample_ray(reflected_ray));
+        }
+
+        Some(color)
+    }
+}
+
+pub struct ToonIntegrator {
+    mapping_interval: Vec<u8>,
+}
+
+impl ToonIntegrator {
+    pub fn new(mapping_interval: Vec<u8>) -> Self {
+        Self { mapping_interval }
+    }
+
+    pub fn li(&self, ray: Ray, scene: &Scene) -> Option<Color> {
+        let isect = scene.intersect(ray)?;
+
+        let material = scene.get_material(isect.material_id).unwrap();
+
+        let Material::Toon(m) = material else {
+            return None;
+        };
+
+        let n = isect.normal.normalize();
+
+        let mut color = Color::default();
+
+        for light in scene.lights {
+            let (l, _i) = match light {
+                Light::Ambient(ambient_light) => {
+                    color += ambient_light.intensity * m.ambient;
+                    continue;
+                }
+                Light::Point(point_light) => {
+                    let direction = point_light.point - isect.point;
+                    let distance = direction.dot(direction).sqrt();
+
+                    let l = direction.normalize();
+                    let intensity = point_light.intensity * point_light.attenuation(distance);
+
+                    (l, intensity)
+                }
+                Light::Directional(directional_light) => {
+                    let l = -directional_light.direction;
+
+                    (l, directional_light.intensity)
+                }
+                Light::Spotlight(spotlight) => {
+                    let direction = spotlight.point - isect.point;
+
+                    let l = direction.normalize();
+
+                    let theta = l.dot(-spotlight.direction);
+
+                    if theta < spotlight.cutoff_cos {
+                        continue;
+                    }
+
+                    let intensity = if theta < spotlight.falloff_cos {
+                        let epsilon = spotlight.falloff_cos - spotlight.cutoff_cos;
+                        let t = (theta - spotlight.cutoff_cos) / epsilon;
+
+                        Color::lerp(Color::BLACK, spotlight.intensity, t)
+                    } else {
+                        spotlight.intensity
+                    };
+
+                    (l, intensity)
+                }
+            };
+
+            let h = n.dot(l);
+
+            for (i, angle) in self.mapping_interval.iter().rev().enumerate() {
+                let cos = (*angle as f32).to_radians().cos();
+
+                if h > cos {
+                    color += m.color_map.get(i).or_else(|| m.color_map.iter().last())?;
+                }
+            }
         }
 
         Some(color)

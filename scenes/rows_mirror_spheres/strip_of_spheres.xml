@@ -1,0 +1,17 @@
+<RT3>
+    <lookat look_from="0 0 -2" look_at="0 0 1" up="0 1 0" />
+    <camera type="orthographic"  screen_window="-5.5 4.5 -1.5 1.5" /> 
+    <integrator type="blinn_phong" depth="2" />
+    <film type="image" w_res="5000" h_res="1500" filename="row_of_spheres_gc.png" img_type="png" gamma_corrected="false" />
+    <aggregator type="list"/>
+    <world_begin/>
+        <!-- <background type="single_color" color="70 130 180"/> -->
+        <background type="single_color" color="0 0 0"/>
+        <!-- Lights -->
+        <light_source type="directional" I="0.9 0.9 0.9" scale="1 1 1" from="0.5 0.5 -1" to="0 0 0" world_radius="7" />
+        <!-- Material Library -->
+       <include filename="./materials.xml" />
+        <!-- Objects -->
+       <include filename="./objects.xml" />
+    <world_end/>
+</RT3>

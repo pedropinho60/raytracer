@@ -72,6 +72,7 @@ impl RenderState {
 
         let integrator_type = self
             .current_integrator_type
+            .as_ref()
             .ok_or(SceneError::Render("cannot render without an integrator"))?;
 
         let aggregator_type = self.current_aggregator_type.ok_or(SceneError::Render(
@@ -164,7 +165,7 @@ fn parse_from_file(file_path: &Path, state: &mut RenderState) -> Result<()> {
                     .push(object_type.to_primitive(material_id).into())
             }
             SceneCommand::Material(material_type) => {
-                let material = material_type.to_material();
+                let material = material_type.into_material();
 
                 let index = state.materials.len();
                 state.materials.push(material);
@@ -175,7 +176,7 @@ fn parse_from_file(file_path: &Path, state: &mut RenderState) -> Result<()> {
                 name,
                 material_type,
             } => {
-                let material = material_type.to_material();
+                let material = material_type.into_material();
 
                 let index = state.materials.len();
                 state.materials.push(material);
