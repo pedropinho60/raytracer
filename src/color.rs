@@ -46,7 +46,7 @@ impl Color {
         }
     }
 
-    pub fn luminosity(self) -> f32 {
+    pub fn luminance(self) -> f32 {
         0.2126 * self.red + 0.7152 * self.green + 0.0722 * self.blue
     }
 

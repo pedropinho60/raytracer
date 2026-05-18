@@ -35,10 +35,10 @@ impl BayerDithering {
     ];
 
     pub fn get_color(&self, row: usize, col: usize, color: Color) -> Color {
-        let luminosity = color.luminosity();
+        let luminance = color.luminance();
         let threshold = Self::MATRIX[row % 4][col % 4] / 16.0;
 
-        if luminosity > threshold {
+        if luminance > threshold {
             Color::WHITE
         } else {
             Color::BLACK
@@ -51,10 +51,10 @@ pub struct WhiteNoiseDithering;
 
 impl WhiteNoiseDithering {
     pub fn get_color(&self, color: Color) -> Color {
-        let luminosity = color.luminosity();
+        let luminance = color.luminance();
         let threshold = rand::random();
 
-        if luminosity > threshold {
+        if luminance > threshold {
             Color::WHITE
         } else {
             Color::BLACK
@@ -106,7 +106,7 @@ impl BlueNoiseDithering {
         let col = col % self.width;
         let threshold = self.blue_noise[row * self.width + col];
 
-        if color.luminosity() > threshold {
+        if color.luminance() > threshold {
             Color::WHITE
         } else {
             Color::BLACK
