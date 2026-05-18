@@ -420,7 +420,7 @@ impl IntegratorType {
             IntegratorType::NormalMap => NormalMapIntegrator.into(),
             IntegratorType::BlinnPhong { depth } => BlinnPhongIntegrator::new(*depth).into(),
             IntegratorType::Toon { mapping_interval } => {
-                ToonIntegrator::new(mapping_interval.0.clone()).into()
+                ToonIntegrator::new(&mapping_interval.0).into()
             }
         }
     }

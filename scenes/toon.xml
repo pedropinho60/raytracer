@@ -1,16 +1,45 @@
 <RT3>
-    <lookat look_from="0 0 -2" look_at="0 0 1" up="0 1 0" />
-    <camera type="orthographic" screen_window="-4.444 4.444 -2.5 2.5" />
+    <lookat look_from="0 4.5 -15" look_at="0 0 1" up="0 1 0" />
+    <camera type="perspective" fovy="45" /> 
     <integrator type="toon" mapping_interval="5 45 65 75 85"/>
-    <film type="image" w_res="1920" h_res="1080" filename="toon.png" img_type="png" gamma_corrected="false" />
+    <film type="image" w_res="1920" h_res="1080" filename="toon.png" img_type="png" gamma_corrected="true"/>
+
+    <!-- Objects storage -->
     <aggregator type="list"/>
+
+    <!-- The Scene -->
     <world_begin/>
-        <!-- <background type="single_color" color="70 130 180"/> -->
-        <background type="single_color" color="255 255 255"/>
+
+        <!-- The Background -->
+        <background type="4_colors" bl="176 214 175" tl="4 99 202" tr="4 99 202" br="176 214 175" />
+
         <!-- Lights -->
-        <light_source type="directional" I="0.9 0.9 0.9" scale="1 1 1" from="0.5 0.5 -1" to="0 0 0" world_radius="7" />
+        <!-- <light_source type="ambient" I="0.1 0.1 0.1" scale="0.5 0.5 0.5" /> -->
+        <!-- <light_source type="directional" I="0.9 0.9 0.9" scale="0.4 0.4 0.4" from="1 0.8 -1" to="0 0 1" /> -->
+        <light_source type="point" I="0.95 0.9 0.8" scale="0.4 0.4 0.4" from="0.1 3.0 1" />
+
         <!-- Material Library -->
-        <material type="toon" color_map="30 30 70 60 60 120 90 90 170 120 120 220 150 150 255" />
-        <object type="sphere" radius="0.4" center="0 0 1" />
+        <make_named_material type="toon" name="gold" color_map="50 30 0 100 70 0 160 120 0 220 160 0 255 187 0" />
+        <make_named_material type="toon" name="grey" color_map="50 50 50 90 90 90 120 120 120 130 130 130 150 150 150" />
+        <make_named_material type="toon" name="redish" color_map="36 0 0 80 0 0 110 0 0 140 0 0 180 0 0" />
+        <make_named_material type="toon" name="greenish" color_map="0 50 0 0 70 0 0 90 0 0 110 0 0 130 0" />
+        <make_named_material type="toon" name="blueish" color_map="0 0 36 0 0 80 0 0 110 0 0 140 0 0 180" />
+
+        <!-- Objects -->
+        <named_material name="redish"/>
+        <object type="sphere" center="0 1 0" radius="1" />
+
+        <named_material name="greenish"/>
+        <object type="sphere" center="-5 1 4" radius="1" />
+
+        <named_material name="blueish"/>
+        <object type="sphere" center="2 1 5" radius="1" />
+
+        <named_material name="gold"/>
+        <object type="sphere" center="5 3.1 -1" radius="1.3" />
+
+        <!-- <named_material name="grey"/> -->
+        <!-- <object type="plane" point="0 0 0" normal="0 1 0" /> -->
+
     <world_end/>
 </RT3>

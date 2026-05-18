@@ -278,12 +278,17 @@ impl BlinnPhongIntegrator {
 }
 
 pub struct ToonIntegrator {
-    mapping_interval: Vec<u8>,
+    cos_thresholds: Vec<f32>,
 }
 
 impl ToonIntegrator {
-    pub fn new(mapping_interval: Vec<u8>) -> Self {
-        Self { mapping_interval }
+    pub fn new(mapping_interval: &[u8]) -> Self {
+        let cos_thresholds = mapping_interval
+            .iter()
+            .map(|&angle| (angle as f32).to_radians().cos())
+            .collect();
+
+        Self { cos_thresholds }
     }
 
     pub fn li(&self, ray: Ray, scene: &Scene) -> Option<Color> {
@@ -297,9 +302,18 @@ impl ToonIntegrator {
 
         let n = isect.normal.normalize();
 
+        let v = -ray.direction.normalize();
+        let ndotv = f32::max(0.0, n.dot(v));
+
+        let edge_threshold = 0.2;
+
+        if ndotv < edge_threshold {
+            return Some(Color::BLACK);
+        }
+
         let mut color = Color::default();
 
-        for light in scene.lights {
+        'outer: for light in scene.lights {
             let (l, _i) = match light {
                 Light::Ambient(ambient_light) => {
                     color += ambient_light.intensity * m.ambient;
@@ -345,13 +359,16 @@ impl ToonIntegrator {
 
             let h = n.dot(l);
 
-            for (i, angle) in self.mapping_interval.iter().rev().enumerate() {
-                let cos = (*angle as f32).to_radians().cos();
-
+            for (i, &cos) in self.cos_thresholds.iter().enumerate() {
                 if h > cos {
-                    color += m.color_map.get(i).or_else(|| m.color_map.iter().last())?;
+                    let color_idx = m.color_map.len().saturating_sub(1).saturating_sub(i);
+
+                    color = *m.color_map.get(color_idx).or_else(|| m.color_map.last())?;
+                    continue 'outer;
                 }
             }
+
+            color = *m.color_map.first()?;
         }
 
         Some(color)
