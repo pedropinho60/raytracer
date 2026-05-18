@@ -162,16 +162,6 @@ impl BlinnPhongIntegrator {
             _ => return None,
         };
 
-        // let Material::BlinnPhong(m) = material else {
-        //     return None;
-        // };
-        //
-        // let kd = m.diffuse;
-        // let ks = m.specular;
-        // let g = m.glossiness;
-        // let ka = m.ambient;
-        // let km = m.mirror;
-
         let v = -ray.direction.normalize();
         let n = isect.normal.normalize();
 
