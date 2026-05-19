@@ -2,7 +2,7 @@ use std::ops::Index;
 
 use glam::Vec3A;
 
-use crate::ray::Ray;
+use crate::core::ray::Ray;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Interval {
@@ -35,7 +35,7 @@ impl Interval {
         }
     }
 
-    pub fn size(&self) -> f32 {
+    pub fn size(self) -> f32 {
         self.max - self.min
     }
 

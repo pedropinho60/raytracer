@@ -3,16 +3,28 @@ use std::cmp::Ordering;
 use derive_more::From;
 
 use crate::{
-    bounding_box::{BoundingBox, Interval},
-    hittable::{Hit, Hittable},
-    ray::Ray,
-    surfel::Surfel,
+    core::ray::Ray,
+    geometry::{
+        bounding_box::{BoundingBox, Interval},
+        hittable::{Hit, Hittable},
+        surfel::Surfel,
+    },
+    parse::dto::AggregatorDTO,
 };
 
 #[derive(Debug, Clone, From)]
 pub enum PrimitiveAggregator {
     List(PrimitiveList),
     Bvh(PrimitiveBVH),
+}
+
+impl PrimitiveAggregator {
+    pub fn build(aggregator_dto: AggregatorDTO, list: &[Hittable]) -> PrimitiveAggregator {
+        match aggregator_dto {
+            AggregatorDTO::List => PrimitiveList::new(list).into(),
+            AggregatorDTO::Tree => PrimitiveBVH::new(list).into(),
+        }
+    }
 }
 
 impl Hit for PrimitiveAggregator {
@@ -195,7 +207,7 @@ impl Hit for BVHNode {
         let hit_left = self.left.intersect(ray, t_min, t_max);
         let hit_right = self
             .right
-            .intersect(ray, t_min, hit_left.map(|(t, _)| t).unwrap_or(t_max));
+            .intersect(ray, t_min, hit_left.map_or(t_max, |(t, _)| t));
 
         match (hit_left, hit_right) {
             (Some(l), Some(r)) => {

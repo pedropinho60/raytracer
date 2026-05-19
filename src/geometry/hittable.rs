@@ -1,11 +1,14 @@
 use derive_more::From;
 
 use crate::{
-    aggregator::{PrimitiveAggregator, PrimitiveBVH, PrimitiveList},
-    bounding_box::BoundingBox,
-    primitive::Primitive,
-    ray::Ray,
-    surfel::Surfel,
+    core::ray::Ray,
+    geometry::{
+        bounding_box::BoundingBox,
+        primitive::{Plane, Primitive, Sphere},
+        surfel::Surfel,
+    },
+    parse::dto::ObjectDTO,
+    render::aggregator::{PrimitiveAggregator, PrimitiveBVH, PrimitiveList},
 };
 
 pub trait Hit {
@@ -18,6 +21,24 @@ pub trait Hit {
 pub enum Hittable {
     Primitive(Primitive),
     Aggregate(PrimitiveAggregator),
+}
+
+impl Hittable {
+    pub fn build(object_dto: ObjectDTO, material_id: usize) -> Primitive {
+        match object_dto {
+            ObjectDTO::Sphere { center, radius } => Primitive::new(
+                Sphere {
+                    center: center.into(),
+                    radius,
+                }
+                .into(),
+                material_id,
+            ),
+            ObjectDTO::Plane { point, normal } => {
+                Primitive::new(Plane::new(point.into(), normal.into()).into(), material_id)
+            }
+        }
+    }
 }
 
 impl From<PrimitiveList> for Hittable {

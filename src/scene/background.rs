@@ -1,6 +1,9 @@
 use derive_more::From;
 
-use crate::{color::Color, ray::Ray};
+use crate::{
+    core::{color::Color, ray::Ray},
+    parse::dto::BackgroundDTO,
+};
 
 #[derive(Debug, Clone, From)]
 pub enum Background {
@@ -24,6 +27,20 @@ impl Background {
     }
 }
 
+impl From<BackgroundDTO> for Background {
+    fn from(value: BackgroundDTO) -> Self {
+        match value {
+            BackgroundDTO::SingleColor { color } => SingleColorBackground {
+                color: color.into(),
+            }
+            .into(),
+            BackgroundDTO::FourColors { bl, tl, tr, br } => {
+                GradientBackground::new(bl.into(), tl.into(), tr.into(), br.into()).into()
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct SingleColorBackground {
     pub color: Color,
@@ -31,15 +48,15 @@ pub struct SingleColorBackground {
 
 #[derive(Debug, Clone)]
 pub struct GradientBackground {
+    bl: Color,
     tl: Color,
     tr: Color,
-    bl: Color,
     br: Color,
 }
 
 impl GradientBackground {
-    pub fn new(tl: Color, tr: Color, bl: Color, br: Color) -> Self {
-        Self { tl, tr, bl, br }
+    pub fn new(bl: Color, tl: Color, tr: Color, br: Color) -> Self {
+        Self { bl, tl, tr, br }
     }
 
     pub fn sample(&self, u: f32, v: f32) -> Color {

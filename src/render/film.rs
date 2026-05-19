@@ -7,8 +7,8 @@ use std::{
 use rayon::prelude::*;
 use serde::Deserialize;
 
-use crate::color::{self, Color, ColorU8};
-use crate::{Result, dithering::Dithering};
+use crate::core::color::{self, Color, ColorU8};
+use crate::{Result, render::dithering::Dithering};
 
 #[derive(Debug, Clone, Copy, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -113,7 +113,7 @@ impl Film {
     }
 
     fn write_png(&self, out: BufWriter<File>, buffer: &[u8]) -> Result<()> {
-        let mut encoder = png::Encoder::new(out, self.width as u32, self.height as u32);
+        let mut encoder = png::Encoder::new(out, self.width.into(), self.height.into());
         encoder.set_color(png::ColorType::Rgb);
         encoder.set_depth(png::BitDepth::Eight);
         encoder.set_compression(png::Compression::NoCompression);

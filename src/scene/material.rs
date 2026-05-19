@@ -1,7 +1,7 @@
 use derive_more::From;
 use glam::Vec3A;
 
-use crate::color::Color;
+use crate::{core::color::Color, parse::dto::MaterialDTO};
 
 #[derive(Clone, From)]
 pub enum Material {
@@ -9,6 +9,27 @@ pub enum Material {
     Checkerboard(CheckerboardMaterial),
     BlinnPhong(BlinnPhongMaterial),
     Toon(ToonMaterial),
+}
+
+impl From<MaterialDTO> for Material {
+    fn from(value: MaterialDTO) -> Self {
+        match value {
+            MaterialDTO::Flat { color } => Material::Flat { kd: color.into() },
+            MaterialDTO::Checkerboard {
+                color_a,
+                color_b,
+                scale,
+            } => CheckerboardMaterial::new(color_a.into(), color_b.into(), scale).into(),
+            MaterialDTO::Blinn {
+                ambient,
+                diffuse,
+                specular,
+                glossiness,
+                mirror,
+            } => BlinnPhongMaterial::new(diffuse, specular, glossiness, ambient, mirror).into(),
+            MaterialDTO::Toon { color_map } => ToonMaterial::new(color_map.0, Color::BLACK).into(),
+        }
+    }
 }
 
 #[derive(Clone)]

@@ -62,9 +62,9 @@ impl Color {
 impl From<ColorU8> for Color {
     fn from(value: ColorU8) -> Self {
         Self {
-            red: value.red as f32 / 255.0,
-            green: value.green as f32 / 255.0,
-            blue: value.blue as f32 / 255.0,
+            red: f32::from(value.red) / 255.0,
+            green: f32::from(value.green) / 255.0,
+            blue: f32::from(value.blue) / 255.0,
         }
     }
 }

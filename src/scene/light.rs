@@ -2,7 +2,7 @@ use derive_more::From;
 use glam::Vec3A;
 use serde::Deserialize;
 
-use crate::color::Color;
+use crate::{core::color::Color, parse::dto::LightDTO};
 
 #[derive(Clone, From)]
 pub enum Light {
@@ -10,6 +10,60 @@ pub enum Light {
     Directional(DirectionalLight),
     Ambient(AmbientLight),
     Spotlight(Spotlight),
+}
+
+impl From<LightDTO> for Light {
+    fn from(value: LightDTO) -> Self {
+        match value {
+            LightDTO::Ambient { intensity, scale } => AmbientLight {
+                intensity: intensity * scale,
+            }
+            .into(),
+            LightDTO::Point {
+                intensity,
+                scale,
+                from,
+                attenuation,
+            } => PointLight {
+                intensity: intensity * scale,
+                point: from.into(),
+                attenuation: attenuation.unwrap_or_default(),
+            }
+            .into(),
+            LightDTO::Directional {
+                intensity,
+                scale,
+                from,
+                to,
+            } => {
+                let to: Vec3A = to.into();
+                let from: Vec3A = from.into();
+                DirectionalLight {
+                    intensity: intensity * scale,
+                    direction: (to - from).normalize(),
+                }
+                .into()
+            }
+            LightDTO::Spotlight {
+                intensity,
+                from,
+                to,
+                cutoff,
+                falloff,
+            } => {
+                let to: Vec3A = to.into();
+                let from: Vec3A = from.into();
+                Spotlight {
+                    intensity,
+                    point: from,
+                    direction: (to - from).normalize(),
+                    cutoff_cos: cutoff.to_radians().cos(),
+                    falloff_cos: falloff.to_radians().cos(),
+                }
+                .into()
+            }
+        }
+    }
 }
 
 #[derive(Clone)]

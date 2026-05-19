@@ -2,13 +2,13 @@ use std::io::Cursor;
 
 use derive_more::From;
 
-use crate::color::Color;
+use crate::{core::color::Color, parse::dto::DitheringDTO};
 
 #[derive(Debug, Clone, From)]
 pub enum Dithering {
     None,
-    Bayer(BayerDithering),
-    WhiteNoise(WhiteNoiseDithering),
+    Bayer,
+    WhiteNoise,
     BlueNoise(BlueNoiseDithering),
 }
 
@@ -16,9 +16,20 @@ impl Dithering {
     pub fn get_color(&self, row: usize, col: usize, color: Color) -> Color {
         match self {
             Dithering::None => color,
-            Dithering::Bayer(inner) => inner.get_color(row, col, color),
-            Dithering::WhiteNoise(inner) => inner.get_color(color),
+            Dithering::Bayer => BayerDithering::get_color(row, col, color),
+            Dithering::WhiteNoise => WhiteNoiseDithering::get_color(color),
             Dithering::BlueNoise(inner) => inner.get_color(row, col, color),
+        }
+    }
+}
+
+impl From<DitheringDTO> for Dithering {
+    fn from(value: DitheringDTO) -> Self {
+        match value {
+            DitheringDTO::None => Dithering::None,
+            DitheringDTO::Bayer => Dithering::Bayer,
+            DitheringDTO::WhiteNoise => Dithering::WhiteNoise,
+            DitheringDTO::BlueNoise => BlueNoiseDithering::new().into(),
         }
     }
 }
@@ -34,7 +45,7 @@ impl BayerDithering {
         [15.0, 7.0, 13.0, 5.0],
     ];
 
-    pub fn get_color(&self, row: usize, col: usize, color: Color) -> Color {
+    pub fn get_color(row: usize, col: usize, color: Color) -> Color {
         let luminance = color.luminance();
         let threshold = Self::MATRIX[row % 4][col % 4] / 16.0;
 
@@ -50,7 +61,7 @@ impl BayerDithering {
 pub struct WhiteNoiseDithering;
 
 impl WhiteNoiseDithering {
-    pub fn get_color(&self, color: Color) -> Color {
+    pub fn get_color(color: Color) -> Color {
         let luminance = color.luminance();
         let threshold = rand::random();
 
@@ -71,7 +82,7 @@ pub struct BlueNoiseDithering {
 
 impl BlueNoiseDithering {
     pub fn new() -> Self {
-        let bytes = include_bytes!("../assets/blue_noise.png");
+        let bytes = include_bytes!("../../assets/blue_noise.png");
 
         let decoder = png::Decoder::new(Cursor::new(bytes));
         let mut reader = decoder.read_info().unwrap();
@@ -90,7 +101,7 @@ impl BlueNoiseDithering {
                 let index = (y * width + x) * 4;
                 let r = bytes[index];
 
-                data[y * width + x] = r as f32 / 255.0;
+                data[y * width + x] = f32::from(r) / 255.0;
             }
         }
 

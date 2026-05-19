@@ -1,31 +1,25 @@
-use crate::{
-    camera::Camera,
-    cli::Cli,
-    error::SceneError,
-    hittable::Hittable,
-    light::Light,
-    material::Material,
-    parse::{AggregatorType, CameraArgs, CameraType, IntegratorType},
-    scene::Scene,
-};
 use std::{collections::HashMap, fs, path::Path, time::Instant};
-
-use quick_xml::de::from_str;
 
 use crate::{
     Result,
-    background::Background,
-    film::Film,
-    parse::{FilmType, Rt3, SceneCommand},
+    cli::Cli,
+    error::SceneError,
+    geometry::hittable::Hittable,
+    parse::{
+        Rt3, SceneCommand,
+        dto::{AggregatorDTO, CameraArgsDTO, CameraDTO, FilmDTO, IntegratorDTO},
+    },
+    render::{aggregator::PrimitiveAggregator, film::Film, integrator::Integrator},
+    scene::{Scene, background::Background, camera::Camera, light::Light, material::Material},
 };
 
 pub struct RenderState {
     pub current_film: Option<Film>,
     pub current_background: Option<Background>,
-    pub current_camera_args: Option<CameraArgs>,
-    pub current_camera_type: Option<CameraType>,
-    pub current_integrator_type: Option<IntegratorType>,
-    pub current_aggregator_type: Option<AggregatorType>,
+    pub current_camera_args: Option<CameraArgsDTO>,
+    pub current_camera_dto: Option<CameraDTO>,
+    pub current_integrator_dto: Option<IntegratorDTO>,
+    pub current_aggregator_dto: Option<AggregatorDTO>,
 
     pub materials: Vec<Material>,
     pub material_names: HashMap<String, usize>,
@@ -39,9 +33,9 @@ impl RenderState {
             current_film: None,
             current_background: None,
             current_camera_args: None,
-            current_camera_type: None,
-            current_integrator_type: None,
-            current_aggregator_type: None,
+            current_camera_dto: None,
+            current_integrator_dto: None,
+            current_aggregator_dto: None,
             materials: Vec::new(),
             material_names: HashMap::new(),
             primitives: Vec::new(),
@@ -53,33 +47,34 @@ impl RenderState {
         let film = self
             .current_film
             .as_mut()
-            .ok_or(SceneError::Render("cannot render without a film"))?;
+            .ok_or(SceneError::Render("cannot render without a film".into()))?;
 
-        let background = self
-            .current_background
-            .as_ref()
-            .ok_or(SceneError::Render("cannot render without a background"))?;
+        let background = self.current_background.as_ref().ok_or(SceneError::Render(
+            "cannot render without a background".into(),
+        ))?;
 
         let camera_args = self
             .current_camera_args
-            .ok_or(SceneError::Render("cannot render without lookat"))?;
+            .ok_or(SceneError::Render("cannot render without lookat".into()))?;
 
-        let camera_type = self
-            .current_camera_type
-            .ok_or(SceneError::Render("cannot render without a camera"))?;
+        let camera_dto = self
+            .current_camera_dto
+            .ok_or(SceneError::Render("cannot render without a camera".into()))?;
 
-        let mut camera: Camera = camera_type.to_camera(camera_args, film.width(), film.height());
+        let mut camera = Camera::build(camera_dto, camera_args, film.width(), film.height());
 
-        let integrator_type = self
-            .current_integrator_type
+        let integrator_dto = self
+            .current_integrator_dto
             .as_ref()
-            .ok_or(SceneError::Render("cannot render without an integrator"))?;
+            .ok_or(SceneError::Render(
+                "cannot render without an integrator".into(),
+            ))?;
 
-        let aggregator_type = self.current_aggregator_type.ok_or(SceneError::Render(
-            "cannot render without an object aggregator",
+        let aggregator_dto = self.current_aggregator_dto.ok_or(SceneError::Render(
+            "cannot render without an object aggregator".into(),
         ))?;
 
-        let aggregator = aggregator_type.to_aggregator(&self.primitives);
+        let aggregator = PrimitiveAggregator::build(aggregator_dto, &self.primitives);
 
         let scene = Scene {
             background,
@@ -88,21 +83,21 @@ impl RenderState {
             lights: &self.lights,
         };
 
-        let mut integrator = integrator_type.to_integrator();
+        let mut integrator: Integrator = integrator_dto.into();
 
         let render_start = Instant::now();
-        integrator.render(&mut camera, &scene, film)?;
+        integrator.render(&mut camera, &scene, film);
         let image_elapsed = render_start.elapsed();
 
-        println!("Render time: {:?}", image_elapsed);
+        println!("Render time: {image_elapsed:?}");
 
         let image_start = Instant::now();
         film.write_image()?;
         let image_elapsed = image_start.elapsed();
-        println!("Time to write image: {:?}", image_elapsed);
+        println!("Time to write image: {image_elapsed:?}");
 
         let total = render_start.elapsed();
-        println!("Total time: {:?}", total);
+        println!("Total time: {total:?}");
 
         Ok(())
     }
@@ -114,99 +109,134 @@ impl Default for RenderState {
     }
 }
 
-pub fn run(args: Cli) -> Result<()> {
-    let mut state = RenderState::new();
-    parse_from_file(&args.input_scene_file, &mut state)?;
-
-    Ok(())
-}
-
-fn parse_from_file(file_path: &Path, state: &mut RenderState) -> Result<()> {
+fn load_rt3_file(file_path: &Path) -> Result<Rt3> {
     let xml_data = fs::read_to_string(file_path)?;
 
-    let scene = from_str::<Rt3>(&xml_data)?;
+    let mut deserializer = quick_xml::de::Deserializer::from_str(&xml_data);
 
-    let mut current_material = None;
+    match serde_path_to_error::deserialize::<_, Rt3>(&mut deserializer) {
+        Ok(scene) => Ok(scene),
+        Err(err) => {
+            let path = err.path().to_string();
+            let msg = err.into_inner().to_string();
 
-    for command in scene.commands {
-        match command {
-            SceneCommand::Film(FilmType::Image {
-                width,
-                height,
-                filename,
-                img_type,
-                gamma_corrected,
-                dithering,
-            }) => {
-                state.current_film = Some(Film::new(
+            Err(SceneError::XmlParse(format!(
+                "Parse error at `{path}`: {msg}"
+            )))
+        }
+    }
+}
+
+pub struct SceneBuilder {
+    pub state: RenderState,
+    current_material: Option<usize>,
+}
+
+impl SceneBuilder {
+    pub fn new() -> Self {
+        Self {
+            state: RenderState::new(),
+            current_material: None,
+        }
+    }
+
+    pub fn process_file<F>(&mut self, file_path: &Path, on_render: &mut F) -> Result<()>
+    where
+        F: FnMut(&mut RenderState) -> Result<()>,
+    {
+        let rt3 = load_rt3_file(file_path)?;
+
+        for command in rt3.commands {
+            match command {
+                SceneCommand::Include { filename } => {
+                    let current_dir = file_path.parent().unwrap_or_else(|| Path::new(""));
+                    let resolved_path = current_dir.join(filename);
+
+                    self.process_file(&resolved_path, on_render)?;
+                }
+                SceneCommand::WorldBegin => (),
+                SceneCommand::WorldEnd | SceneCommand::RenderAgain => on_render(&mut self.state)?,
+                SceneCommand::Film(FilmDTO::Image {
                     width,
                     height,
                     filename,
                     img_type,
                     gamma_corrected,
-                    dithering.to_dithering(),
-                ))
-            }
-            SceneCommand::Background(background_type) => {
-                let background = background_type.to_background();
+                    dithering,
+                }) => {
+                    self.state.current_film = Some(Film::new(
+                        width,
+                        height,
+                        filename,
+                        img_type,
+                        gamma_corrected,
+                        dithering.into(),
+                    ));
+                }
+                SceneCommand::Background(background_dto) => {
+                    self.state.current_background = Some(background_dto.into());
+                }
+                SceneCommand::Camera(camera_dto) => {
+                    self.state.current_camera_dto = Some(camera_dto);
+                }
+                SceneCommand::Lookat(camera_args) => {
+                    self.state.current_camera_args = Some(camera_args);
+                }
+                SceneCommand::Object(object_dto) => {
+                    let material_id = self.current_material.ok_or(SceneError::MissingComponent(
+                        "missing material for object".into(),
+                    ))?;
 
-                state.current_background = Some(background);
-            }
-            SceneCommand::Camera(camera_type) => {
-                state.current_camera_type = Some(camera_type);
-            }
-            SceneCommand::Lookat(camera_args) => state.current_camera_args = Some(camera_args),
-            SceneCommand::Object(object_type) => {
-                let material_id = current_material
-                    .ok_or(SceneError::MissingComponent("missing material for object"))?;
+                    self.state
+                        .primitives
+                        .push(Hittable::build(object_dto, material_id).into());
+                }
+                SceneCommand::Material(material_dto) => {
+                    let material = material_dto.into();
 
-                state
-                    .primitives
-                    .push(object_type.to_primitive(material_id).into())
-            }
-            SceneCommand::Material(material_type) => {
-                let material = material_type.into_material();
+                    let index = self.state.materials.len();
+                    self.state.materials.push(material);
 
-                let index = state.materials.len();
-                state.materials.push(material);
+                    self.current_material = Some(index);
+                }
+                SceneCommand::MakeNamedMaterial {
+                    name,
+                    material_type: material_dto,
+                } => {
+                    let material = material_dto.into();
 
-                current_material = Some(index);
-            }
-            SceneCommand::MakeNamedMaterial {
-                name,
-                material_type,
-            } => {
-                let material = material_type.into_material();
+                    let index = self.state.materials.len();
+                    self.state.materials.push(material);
 
-                let index = state.materials.len();
-                state.materials.push(material);
-
-                state.material_names.insert(name, index);
-            }
-            SceneCommand::NamedMaterial { name } => {
-                current_material = Some(*state.material_names.get(&name).ok_or(
-                    SceneError::MissingComponent("material `{name}` does not exist"),
-                )?);
-            }
-            SceneCommand::Integrator(integrator_type) => {
-                state.current_integrator_type = Some(integrator_type)
-            }
-            SceneCommand::WorldBegin => (),
-            SceneCommand::WorldEnd => state.execute_render()?,
-            SceneCommand::RenderAgain => state.execute_render()?,
-            SceneCommand::Include { filename } => {
-                let current_dir = file_path.parent().unwrap_or_else(|| Path::new(""));
-
-                let resolved_path = current_dir.join(filename);
-
-                parse_from_file(&resolved_path, state)?;
-            }
-            SceneCommand::LightSource(light_type) => state.lights.push(light_type.to_light()),
-            SceneCommand::Aggregator(aggregator_type) => {
-                state.current_aggregator_type = Some(aggregator_type)
+                    self.state.material_names.insert(name, index);
+                }
+                SceneCommand::NamedMaterial { name } => {
+                    self.current_material = Some(*self.state.material_names.get(&name).ok_or(
+                        SceneError::MissingComponent(format!("material `{name}` does not exist")),
+                    )?);
+                }
+                SceneCommand::Integrator(integrator_dto) => {
+                    self.state.current_integrator_dto = Some(integrator_dto);
+                }
+                SceneCommand::LightSource(light_dto) => self.state.lights.push(light_dto.into()),
+                SceneCommand::Aggregator(aggregator_dto) => {
+                    self.state.current_aggregator_dto = Some(aggregator_dto);
+                }
             }
         }
+
+        Ok(())
     }
+}
+
+pub fn run(args: &Cli) -> Result<()> {
+    let mut builder = SceneBuilder::new();
+
+    builder.process_file(&args.input_scene_file, &mut |state: &mut RenderState| {
+        state.execute_render()?;
+
+        Ok(())
+    })?;
 
     Ok(())
 }

@@ -5,7 +5,7 @@ use raytracer::Cli;
 fn main() -> Result<()> {
     let args = Cli::parse();
 
-    raytracer::run(args)?;
+    raytracer::run(&args)?;
 
     Ok(())
 }

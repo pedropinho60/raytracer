@@ -1,7 +1,14 @@
 use crate::{
-    aggregator::PrimitiveAggregator, background::Background, hittable::Hit, light::Light,
-    material::Material, ray::Ray, surfel::Surfel,
+    core::ray::Ray,
+    geometry::{hittable::Hit, surfel::Surfel},
+    render::aggregator::PrimitiveAggregator,
+    scene::{background::Background, light::Light, material::Material},
 };
+
+pub mod background;
+pub mod camera;
+pub mod light;
+pub mod material;
 
 pub struct Scene<'a> {
     pub background: &'a Background,
@@ -10,7 +17,7 @@ pub struct Scene<'a> {
     pub lights: &'a [Light],
 }
 
-impl<'a> Scene<'a> {
+impl Scene<'_> {
     pub fn intersect(&self, ray: Ray) -> Option<Surfel> {
         self.primitives
             .intersect(ray, 0.001, f32::INFINITY)
