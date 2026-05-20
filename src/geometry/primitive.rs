@@ -2,14 +2,17 @@ mod plane;
 mod sphere;
 
 use derive_more::From;
-use glam::Vec3A;
 
 pub use plane::Plane;
 pub use sphere::Sphere;
 
 use crate::{
     core::ray::Ray,
-    geometry::{bounding_box::BoundingBox, hittable::Hit, surfel::Surfel},
+    geometry::{
+        bounding_box::BoundingBox,
+        hittable::Hit,
+        surfel::{HitRecord, Surfel},
+    },
 };
 
 #[derive(Debug, Clone)]
@@ -29,18 +32,17 @@ impl Hit for Primitive {
         self.shape.bounding_box()
     }
 
-    fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Surfel)> {
-        let (t, point, normal, from_behind) = self.shape.intersect(ray, t_min, t_max)?;
+    fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<Surfel> {
+        let hit = self.shape.intersect(ray, t_min, t_max)?;
 
-        Some((
-            t,
-            Surfel {
-                point,
-                normal,
-                from_behind,
-                material_id: self.material_id,
-            },
-        ))
+        Some(Surfel {
+            point: hit.point,
+            normal: hit.normal,
+            u: hit.u,
+            v: hit.v,
+            t: hit.t,
+            material_id: self.material_id,
+        })
     }
 
     fn intersect_any(&self, ray: Ray, t_min: f32, t_max: f32) -> bool {
@@ -61,7 +63,7 @@ impl Shape {
             Shape::Plane(_) => BoundingBox::UNIVERSE,
         }
     }
-    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Vec3A, Vec3A, bool)> {
+    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         match self {
             Shape::Sphere(inner) => inner.intersect(ray, t_min, t_max),
             Shape::Plane(inner) => inner.intersect(ray, t_min, t_max),

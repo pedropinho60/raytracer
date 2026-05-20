@@ -21,10 +21,14 @@ impl BlinnPhongIntegrator {
         let (kd, ks, g, ka, km) = match material {
             Material::Flat { kd } => (*kd, Color::BLACK, 0, Color::BLACK, Color::BLACK),
             Material::Checkerboard(m) => (
-                m.color_at(isect.point),
+                m.color_at(isect.u, isect.v),
                 Color::BLACK,
                 0,
-                Color::BLACK,
+                Color {
+                    red: 0.1,
+                    green: 0.1,
+                    blue: 0.1,
+                },
                 Color::BLACK,
             ),
             Material::BlinnPhong(m) => (m.diffuse, m.specular, m.glossiness, m.ambient, m.mirror),

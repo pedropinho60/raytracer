@@ -1,5 +1,4 @@
 use derive_more::From;
-use glam::Vec3A;
 
 use crate::{core::color::Color, parse::dto::MaterialDTO};
 
@@ -44,18 +43,15 @@ impl CheckerboardMaterial {
         Self {
             color_a,
             color_b,
-            scale,
+            scale: 1.0 / scale,
         }
     }
 
-    pub fn color_at(&self, point: Vec3A) -> Color {
-        let scaled_point = point / self.scale;
+    pub fn color_at(&self, u: f32, v: f32) -> Color {
+        let u_cell = (u * self.scale).floor() as i32;
+        let v_cell = (v * self.scale).floor() as i32;
 
-        let ix = scaled_point.x.floor() as i64;
-        let iy = scaled_point.y.floor() as i64;
-        let iz = scaled_point.z.floor() as i64;
-
-        if (ix + iy + iz) % 2 == 0 {
+        if (u_cell + v_cell) % 2 == 0 {
             self.color_a
         } else {
             self.color_b

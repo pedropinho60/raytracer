@@ -14,7 +14,7 @@ impl RayCastIntegrator {
 
         match material {
             Material::Flat { kd } => Some(*kd),
-            Material::Checkerboard(inner) => Some(inner.color_at(isect.point)),
+            Material::Checkerboard(inner) => Some(inner.color_at(isect.u, isect.v)),
             _ => None,
         }
     }

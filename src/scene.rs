@@ -19,9 +19,7 @@ pub struct Scene<'a> {
 
 impl Scene<'_> {
     pub fn intersect(&self, ray: Ray) -> Option<Surfel> {
-        self.primitives
-            .intersect(ray, 0.001, f32::INFINITY)
-            .map(|(_, s)| s)
+        self.primitives.intersect(ray, 0.001, f32::INFINITY)
     }
 
     pub fn is_occluded(&self, ray: Ray, distance: f32) -> bool {

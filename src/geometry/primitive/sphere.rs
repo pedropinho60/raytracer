@@ -1,6 +1,9 @@
 use glam::Vec3A;
 
-use crate::{core::ray::Ray, geometry::bounding_box::BoundingBox};
+use crate::{
+    core::ray::Ray,
+    geometry::{bounding_box::BoundingBox, surfel::HitRecord},
+};
 
 #[derive(Debug, Clone)]
 pub struct Sphere {
@@ -13,7 +16,7 @@ impl Sphere {
         BoundingBox::new(self.center - self.radius, self.center + self.radius)
     }
 
-    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Vec3A, Vec3A, bool)> {
+    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let o = ray.origin;
 
         let oc = o - self.center;
@@ -47,9 +50,25 @@ impl Sphere {
         let outward_vector = point - self.center;
 
         let normal = outward_vector / self.radius;
+
         let from_behind = ray.direction.dot(normal) > 0.0;
 
-        Some((t, point, normal, from_behind))
+        if from_behind {
+            return None;
+        }
+
+        let d = -normal;
+
+        let u = 0.5 + d.z.atan2(d.x) * 0.5 * std::f32::consts::FRAC_1_PI;
+        let v = 0.5 + d.y.asin() * std::f32::consts::FRAC_1_PI;
+
+        Some(HitRecord {
+            point,
+            normal,
+            u,
+            v,
+            t,
+        })
     }
 
     pub fn intersect_any(&self, ray: Ray, t_min: f32, t_max: f32) -> bool {

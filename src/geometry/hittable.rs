@@ -13,7 +13,7 @@ use crate::{
 
 pub trait Hit {
     fn bounding_box(&self) -> BoundingBox;
-    fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Surfel)>;
+    fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<Surfel>;
     fn intersect_any(&self, ray: Ray, t_min: f32, t_max: f32) -> bool;
 }
 
@@ -61,7 +61,7 @@ impl Hit for Hittable {
         }
     }
 
-    fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Surfel)> {
+    fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<Surfel> {
         match self {
             Hittable::Primitive(inner) => inner.intersect(ray, t_min, t_max),
             Hittable::Aggregate(inner) => inner.intersect(ray, t_min, t_max),

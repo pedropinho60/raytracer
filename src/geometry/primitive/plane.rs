@@ -1,6 +1,6 @@
 use glam::Vec3A;
 
-use crate::core::ray::Ray;
+use crate::{core::ray::Ray, geometry::surfel::HitRecord};
 
 #[derive(Debug, Clone)]
 pub struct Plane {
@@ -16,7 +16,7 @@ impl Plane {
         }
     }
 
-    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Vec3A, Vec3A, bool)> {
+    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let denom = self.normal.dot(ray.direction);
 
         if denom.abs() < 1e-6 {
@@ -35,7 +35,31 @@ impl Plane {
         let normal = self.normal;
         let from_behind = ray.direction.dot(normal) > 0.0;
 
-        Some((t, point, normal, from_behind))
+        if from_behind {
+            return None;
+        }
+
+        let tangent = if normal.x.abs() > 0.9 {
+            Vec3A::Y
+        } else {
+            Vec3A::X
+        };
+
+        let u_axis = normal.cross(tangent).normalize();
+        let v_axis = normal.cross(u_axis);
+
+        let hit_vec = point - self.point;
+
+        let u = hit_vec.dot(u_axis);
+        let v = hit_vec.dot(v_axis);
+
+        Some(HitRecord {
+            point,
+            normal,
+            u,
+            v,
+            t,
+        })
     }
 
     pub fn intersect_any(&self, ray: Ray, t_min: f32, t_max: f32) -> bool {

@@ -35,7 +35,7 @@ impl Hit for PrimitiveAggregator {
         }
     }
 
-    fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Surfel)> {
+    fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<Surfel> {
         match self {
             PrimitiveAggregator::List(inner) => inner.intersect(ray, t_min, t_max),
             PrimitiveAggregator::Bvh(inner) => inner.intersect(ray, t_min, t_max),
@@ -74,21 +74,19 @@ impl Hit for PrimitiveList {
         self.bbox
     }
 
-    fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Surfel)> {
+    fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<Surfel> {
         let mut closest_hit = None;
 
         let mut t_closest = t_max;
 
         for primitive in &self.primitives {
-            if let Some((t, surfel)) = primitive.intersect(ray, t_min, t_closest)
-                && !surfel.from_behind
-            {
-                t_closest = t;
+            if let Some(surfel) = primitive.intersect(ray, t_min, t_closest) {
+                t_closest = surfel.t;
                 closest_hit = Some(surfel);
             }
         }
 
-        Some((t_closest, closest_hit?))
+        closest_hit
     }
 
     fn intersect_any(&self, ray: Ray, t_min: f32, t_max: f32) -> bool {
@@ -116,7 +114,7 @@ impl Hit for PrimitiveBVH {
         self.root.bounding_box()
     }
 
-    fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Surfel)> {
+    fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<Surfel> {
         self.root.intersect(ray, t_min, t_max)
     }
 
@@ -199,7 +197,7 @@ impl Hit for BVHNode {
         self.bbox
     }
 
-    fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<(f32, Surfel)> {
+    fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<Surfel> {
         if !self.bbox.hit(ray, Interval::new(t_min, t_max)) {
             return None;
         }
@@ -207,11 +205,11 @@ impl Hit for BVHNode {
         let hit_left = self.left.intersect(ray, t_min, t_max);
         let hit_right = self
             .right
-            .intersect(ray, t_min, hit_left.map_or(t_max, |(t, _)| t));
+            .intersect(ray, t_min, hit_left.map_or(t_max, |s| s.t));
 
         match (hit_left, hit_right) {
             (Some(l), Some(r)) => {
-                if l.0 < r.0 {
+                if l.t < r.t {
                     Some(l)
                 } else {
                     Some(r)
