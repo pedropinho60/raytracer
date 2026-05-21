@@ -32,7 +32,7 @@ impl BlinnPhongIntegrator {
                 Color::BLACK,
             ),
             Material::BlinnPhong(m) => (m.diffuse, m.specular, m.glossiness, m.ambient, m.mirror),
-            Material::Toon(_) => return None,
+            Material::Cel(_) => return None,
         };
 
         let v = -ray.direction.normalize();

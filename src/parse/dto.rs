@@ -19,6 +19,19 @@ where
     s.parse::<T>().map_err(serde::de::Error::custom)
 }
 
+fn parse_optional_from_string<'de, T, D>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: FromStr,
+    T::Err: std::fmt::Display,
+{
+    let s: Option<String> = Option::deserialize(deserializer)?;
+    match s {
+        Some(s) => s.parse::<T>().map(Some).map_err(serde::de::Error::custom),
+        None => Ok(None),
+    }
+}
+
 #[derive(Debug, Clone, Copy, Deserialize)]
 pub struct CameraArgsDTO {
     #[serde(rename = "@look_from")]
@@ -198,9 +211,21 @@ pub enum MaterialDTO {
         #[serde(rename = "@mirror", default)]
         mirror: Color,
     },
-    Toon {
+    Cel {
         #[serde(rename = "@color_map")]
         color_map: Colors,
+        #[serde(rename = "@ambient", default)]
+        ambient: Color,
+        #[serde(rename = "@shadow_color")]
+        shadow_color: Option<ColorU8>,
+        #[serde(
+            rename = "@silhouette_angle",
+            deserialize_with = "parse_optional_from_string",
+            default
+        )]
+        silhouette_angle: Option<f32>,
+        #[serde(rename = "@silhouette_color", default)]
+        silhouette_color: Color,
     },
 }
 
@@ -214,7 +239,7 @@ pub enum IntegratorDTO {
         #[serde(rename = "@depth", deserialize_with = "parse_from_string")]
         depth: u8,
     },
-    Toon {
+    CelShading {
         #[serde(rename = "@mapping_interval")]
         mapping_interval: ArrayDTO<u8>,
     },

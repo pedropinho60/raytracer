@@ -1,15 +1,15 @@
 mod blinn_phong;
+mod celshading;
 mod normal_map;
 mod raycast;
-mod toon;
 
 use derive_more::From;
 use rayon::prelude::*;
 
 pub use blinn_phong::BlinnPhongIntegrator;
+pub use celshading::CelShadingIntegrator;
 pub use normal_map::NormalMapIntegrator;
 pub use raycast::RayCastIntegrator;
-pub use toon::ToonIntegrator;
 
 use crate::{
     core::{color::Color, ray::Ray},
@@ -37,8 +37,8 @@ impl From<&IntegratorDTO> for Integrator {
             IntegratorDTO::Flat => RayCastIntegrator.into(),
             IntegratorDTO::NormalMap => NormalMapIntegrator.into(),
             IntegratorDTO::BlinnPhong { depth } => BlinnPhongIntegrator::new(*depth).into(),
-            IntegratorDTO::Toon { mapping_interval } => {
-                ToonIntegrator::new(&mapping_interval.0).into()
+            IntegratorDTO::CelShading { mapping_interval } => {
+                CelShadingIntegrator::new(&mapping_interval.0).into()
             }
         }
     }
@@ -49,7 +49,7 @@ pub enum SamplerIntegrator {
     RayCast(RayCastIntegrator),
     NormalMap(NormalMapIntegrator),
     BlinnPhong(BlinnPhongIntegrator),
-    Toon(ToonIntegrator),
+    CelShading(CelShadingIntegrator),
 }
 
 impl SamplerIntegrator {
@@ -86,7 +86,7 @@ impl SamplerIntegrator {
             SamplerIntegrator::RayCast(_) => RayCastIntegrator::li(ray, scene),
             SamplerIntegrator::NormalMap(_) => NormalMapIntegrator::li(ray, scene),
             SamplerIntegrator::BlinnPhong(inner) => inner.li(ray, scene, 0),
-            SamplerIntegrator::Toon(inner) => inner.li(ray, scene),
+            SamplerIntegrator::CelShading(inner) => inner.li(ray, scene),
         }
     }
 
@@ -95,7 +95,7 @@ impl SamplerIntegrator {
             SamplerIntegrator::RayCast(_)
             | SamplerIntegrator::NormalMap(_)
             | SamplerIntegrator::BlinnPhong(_)
-            | SamplerIntegrator::Toon(_) => (),
+            | SamplerIntegrator::CelShading(_) => (),
         }
     }
 }

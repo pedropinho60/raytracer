@@ -7,7 +7,7 @@ pub enum Material {
     Flat { kd: Color },
     Checkerboard(CheckerboardMaterial),
     BlinnPhong(BlinnPhongMaterial),
-    Toon(ToonMaterial),
+    Cel(CelMaterial),
 }
 
 impl From<MaterialDTO> for Material {
@@ -26,7 +26,20 @@ impl From<MaterialDTO> for Material {
                 glossiness,
                 mirror,
             } => BlinnPhongMaterial::new(diffuse, specular, glossiness, ambient, mirror).into(),
-            MaterialDTO::Toon { color_map } => ToonMaterial::new(color_map.0, Color::BLACK).into(),
+            MaterialDTO::Cel {
+                color_map,
+                ambient,
+                shadow_color,
+                silhouette_angle,
+                silhouette_color,
+            } => CelMaterial::new(
+                color_map.0.into_iter().rev().collect(),
+                ambient,
+                shadow_color.map(Color::from),
+                silhouette_angle,
+                silhouette_color,
+            )
+            .into(),
         }
     }
 }
@@ -87,13 +100,28 @@ impl BlinnPhongMaterial {
 }
 
 #[derive(Clone)]
-pub struct ToonMaterial {
+pub struct CelMaterial {
     pub color_map: Vec<Color>,
     pub ambient: Color,
+    pub shadow_color: Color,
+    pub silhouette_cos: Option<f32>,
+    pub silhouette_color: Color,
 }
 
-impl ToonMaterial {
-    pub fn new(color_map: Vec<Color>, ambient: Color) -> Self {
-        Self { color_map, ambient }
+impl CelMaterial {
+    pub fn new(
+        color_map: Vec<Color>,
+        ambient: Color,
+        shadow_color: Option<Color>,
+        silhouette_angle: Option<f32>,
+        silhouette_color: Color,
+    ) -> Self {
+        Self {
+            color_map,
+            ambient,
+            shadow_color: shadow_color.unwrap_or(Color::BLACK),
+            silhouette_cos: silhouette_angle.map(|a| a.to_radians().cos()),
+            silhouette_color,
+        }
     }
 }

@@ -4,11 +4,11 @@ use crate::{
     scene::{Scene, light::Light, material::Material},
 };
 
-pub struct ToonIntegrator {
+pub struct CelShadingIntegrator {
     cos_thresholds: Vec<f32>,
 }
 
-impl ToonIntegrator {
+impl CelShadingIntegrator {
     pub fn new(mapping_interval: &[u8]) -> Self {
         let cos_thresholds = mapping_interval
             .iter()
@@ -23,22 +23,22 @@ impl ToonIntegrator {
 
         let material = scene.get_material(isect.material_id).unwrap();
 
-        let Material::Toon(material) = material else {
+        let Material::Cel(material) = material else {
             return None;
         };
 
         let n = isect.normal.normalize();
 
-        let v = -ray.direction.normalize();
-        let ndotv = f32::max(0.0, n.dot(v));
+        if let Some(threshold) = material.silhouette_cos {
+            let v = -ray.direction.normalize();
+            let ndotv = f32::max(0.0, n.dot(v));
 
-        let edge_threshold = 0.2;
-
-        if ndotv < edge_threshold {
-            return Some(Color::BLACK);
+            if ndotv < threshold {
+                return Some(material.silhouette_color);
+            }
         }
 
-        let mut color = Color::default();
+        let mut color = Color::BLACK;
 
         'outer: for light in scene.lights {
             let (l, _i) = match light {
@@ -53,21 +53,43 @@ impl ToonIntegrator {
                     let l = direction.normalize();
                     let intensity = point_light.intensity * point_light.attenuation(distance);
 
+                    let shadow_ray = Ray {
+                        origin: isect.point,
+                        direction: l,
+                    };
+
+                    if scene.is_occluded(shadow_ray, distance) {
+                        color = material.shadow_color;
+                        continue;
+                    }
+
                     (l, intensity)
                 }
                 Light::Directional(directional_light) => {
                     let l = -directional_light.direction;
 
+                    let shadow_ray = Ray {
+                        origin: isect.point,
+                        direction: l,
+                    };
+
+                    if scene.is_occluded(shadow_ray, f32::INFINITY) {
+                        color = material.shadow_color;
+                        continue;
+                    }
+
                     (l, directional_light.intensity)
                 }
                 Light::Spotlight(spotlight) => {
                     let direction = spotlight.point - isect.point;
+                    let distance = direction.dot(direction).sqrt();
 
                     let l = direction.normalize();
 
                     let theta = l.dot(-spotlight.direction);
 
                     if theta < spotlight.cutoff_cos {
+                        color = material.shadow_color;
                         continue;
                     }
 
@@ -80,6 +102,16 @@ impl ToonIntegrator {
                         spotlight.intensity
                     };
 
+                    let shadow_ray = Ray {
+                        origin: isect.point,
+                        direction: l,
+                    };
+
+                    if scene.is_occluded(shadow_ray, distance) {
+                        color = material.shadow_color;
+                        continue;
+                    }
+
                     (l, intensity)
                 }
             };
@@ -88,25 +120,23 @@ impl ToonIntegrator {
 
             for (i, &cos) in self.cos_thresholds.iter().enumerate() {
                 if h > cos {
-                    let color_idx = material.color_map.len().saturating_sub(1).saturating_sub(i);
-
                     color = *material
                         .color_map
-                        .get(color_idx)
+                        .get(i)
                         .or_else(|| material.color_map.last())?;
                     continue 'outer;
                 }
             }
 
-            color = *material.color_map.first()?;
+            color = *material.color_map.last()?;
         }
 
         Some(color)
     }
 }
 
-impl From<ToonIntegrator> for Integrator {
-    fn from(value: ToonIntegrator) -> Self {
+impl From<CelShadingIntegrator> for Integrator {
+    fn from(value: CelShadingIntegrator) -> Self {
         Integrator::from(SamplerIntegrator::from(value))
     }
 }
