@@ -35,11 +35,11 @@ where
 #[derive(Debug, Clone, Copy, Deserialize)]
 pub struct CameraArgsDTO {
     #[serde(rename = "@look_from")]
-    pub look_from: Vec3DTO,
+    pub look_from: Vec3A,
     #[serde(rename = "@look_at")]
-    pub look_at: Vec3DTO,
+    pub look_at: Vec3A,
     #[serde(rename = "@up")]
-    pub up: Vec3DTO,
+    pub up: Vec3A,
 }
 
 #[derive(Debug, Clone, Copy, Deserialize)]
