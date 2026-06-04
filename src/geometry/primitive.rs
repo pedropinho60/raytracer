@@ -1,10 +1,13 @@
 mod plane;
 mod sphere;
+mod triangle;
 
 use derive_more::From;
 
 pub use plane::Plane;
 pub use sphere::Sphere;
+pub use triangle::Triangle;
+pub use triangle::TriangleMesh;
 
 use crate::{
     core::ray::Ray,
@@ -54,6 +57,7 @@ impl Hit for Primitive {
 pub enum Shape {
     Sphere(Sphere),
     Plane(Plane),
+    Triangle(Triangle),
 }
 
 impl Shape {
@@ -61,12 +65,14 @@ impl Shape {
         match self {
             Shape::Sphere(inner) => inner.bounding_box(),
             Shape::Plane(_) => BoundingBox::UNIVERSE,
+            Shape::Triangle(inner) => inner.bounding_box(),
         }
     }
     pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         match self {
             Shape::Sphere(inner) => inner.intersect(ray, t_min, t_max),
             Shape::Plane(inner) => inner.intersect(ray, t_min, t_max),
+            Shape::Triangle(inner) => inner.intersect(ray, t_min, t_max),
         }
     }
 
@@ -74,6 +80,7 @@ impl Shape {
         match self {
             Shape::Sphere(inner) => inner.intersect_any(ray, t_min, t_max),
             Shape::Plane(inner) => inner.intersect_any(ray, t_min, t_max),
+            Shape::Triangle(inner) => inner.intersect_any(ray, t_min, t_max),
         }
     }
 }

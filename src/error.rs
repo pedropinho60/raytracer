@@ -15,6 +15,9 @@ pub enum SceneError {
     #[error("Invalid scene definition: {0}")]
     MissingComponent(String),
 
+    #[error("Error while loading object")]
+    ObjError(#[from] tobj::LoadError),
+
     #[error("Error while rendering: {0}")]
     Render(String),
 

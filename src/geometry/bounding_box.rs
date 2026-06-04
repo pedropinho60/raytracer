@@ -82,6 +82,14 @@ impl BoundingBox {
         }
     }
 
+    pub fn expand(self, delta: f32) -> Self {
+        Self {
+            x: self.x.expand(delta),
+            y: self.y.expand(delta),
+            z: self.z.expand(delta),
+        }
+    }
+
     pub fn longest_axis(&self) -> usize {
         if self.x.size() > self.y.size() {
             if self.x.size() > self.z.size() { 0 } else { 2 }

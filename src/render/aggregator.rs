@@ -19,7 +19,7 @@ pub enum PrimitiveAggregator {
 }
 
 impl PrimitiveAggregator {
-    pub fn build(aggregator_dto: AggregatorDTO, list: &[Hittable]) -> PrimitiveAggregator {
+    pub fn build(aggregator_dto: AggregatorDTO, list: &[Hittable]) -> Self {
         match aggregator_dto {
             AggregatorDTO::List => PrimitiveList::new(list).into(),
             AggregatorDTO::Tree => PrimitiveBVH::new(list).into(),

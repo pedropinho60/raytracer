@@ -65,18 +65,11 @@ impl Camera {
 
         match camera_dto {
             CameraDTO::Orthographic { screen_window } => {
-                OrthographicCamera::new(look_from.into(), look_at.into(), up.into(), screen_window)
-                    .into()
+                OrthographicCamera::new(look_from, look_at, up, screen_window).into()
             }
-            CameraDTO::Perspective { fovy } => PerspectiveCamera::new(
-                look_from.into(),
-                look_at.into(),
-                up.into(),
-                fovy,
-                width,
-                height,
-            )
-            .into(),
+            CameraDTO::Perspective { fovy } => {
+                PerspectiveCamera::new(look_from, look_at, up, fovy, width, height).into()
+            }
         }
     }
 

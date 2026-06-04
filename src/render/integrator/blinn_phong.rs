@@ -133,7 +133,7 @@ impl BlinnPhongIntegrator {
             color += km
                 * self
                     .li(reflected_ray, scene, depth + 1)
-                    .unwrap_or_else(|| scene.background.sample_ray(reflected_ray));
+                    .unwrap_or(Color::BLACK);
         }
 
         Some(color)

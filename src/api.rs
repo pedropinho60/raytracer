@@ -187,9 +187,7 @@ impl SceneBuilder {
                         "missing material for object".into(),
                     ))?;
 
-                    self.state
-                        .primitives
-                        .push(Hittable::build(object_dto, material_id).into());
+                    Hittable::add_to_array(&mut self.state, object_dto, material_id, file_path)?;
                 }
                 SceneCommand::Material(material_dto) => {
                     let material = material_dto.into();

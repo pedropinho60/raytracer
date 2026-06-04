@@ -1,0 +1,21 @@
+<RT3>
+    <!--- The Camera -->
+    <lookat look_from="0 -90 30" look_at="0 0 0" up="0 1 0" />
+    <camera type="perspective" fovy="25" />
+    <integrator type="blinn_phong" depth="2" />
+    <aggregator type="tree" />
+    <!-- <accelerator type="bvh" split_method="middle" max_prims_per_node="4" /> -->
+    <!-- <sampler type="stratified" x_samples="4" y_samples="4" dimensions="1" jitter="on" /> -->
+    <!-- <filter type="gaussian" alpha="2" x_width="2" y_width="2" /> -->
+
+    <film type="image" x_res="1920" y_res="1080" filename="teapot_hires_P.png" img_type="png" gamma_corrected="true" />
+    <include filename="teapot_geometry.xml" />
+
+    <lookat look_from="0 0 30" look_at="0 0 0" up="0 1 0" />
+    <camera type="orthographic" screen_window="-40 40 -22.5 22.5" />
+    <integrator type="blinn_phong" depth="2" />
+
+    <film type="image" x_res="1920" y_res="1080" filename="teapot_hires_O.png" img_type="png" gamma_corrected="false" />
+    <include filename="teapot_geometry.xml" />
+
+</RT3>

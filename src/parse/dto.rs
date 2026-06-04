@@ -1,6 +1,6 @@
 use std::{fmt::Display, path::PathBuf, str::FromStr};
 
-use glam::Vec3A;
+use glam::{Vec2, Vec3A};
 use serde::{Deserialize, Deserializer};
 
 use crate::{
@@ -165,7 +165,7 @@ pub enum LightDTO {
     },
 }
 
-#[derive(Debug, Clone, Copy, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "@type")]
 #[serde(rename_all = "snake_case")]
 pub enum ObjectDTO {
@@ -180,6 +180,51 @@ pub enum ObjectDTO {
         point: Vec3DTO,
         #[serde(rename = "@normal")]
         normal: Vec3DTO,
+    },
+    #[serde(rename = "trianglemesh")]
+    TriangleMesh(TriangleMeshDTO),
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum TriangleMeshDTO {
+    File {
+        #[serde(rename = "@filename")]
+        filename: String,
+    },
+    Inline {
+        #[serde(rename = "@ntriangles", deserialize_with = "parse_from_string")]
+        ntriangles: usize,
+        #[serde(rename = "@vertices")]
+        vertices: Vec3Array,
+        #[serde(rename = "@vertex_indices")]
+        vertex_indices: ArrayDTO<u32>,
+        #[serde(rename = "@normals")]
+        normals: Vec3Array,
+        #[serde(rename = "@normal_indices")]
+        normal_indices: ArrayDTO<u32>,
+        #[serde(rename = "@uvs")]
+        uvs: Option<Vec2Array>,
+        #[serde(rename = "@uv_indices")]
+        uv_indices: Option<ArrayDTO<u32>>,
+        #[serde(
+            rename = "@reverse_vertex_order",
+            deserialize_with = "parse_from_string",
+            default
+        )]
+        reverse_vertex_order: bool,
+        #[serde(
+            rename = "@compute_normals",
+            deserialize_with = "parse_optional_from_string",
+            default
+        )]
+        compute_normals: Option<bool>,
+        #[serde(
+            rename = "@backface_cull",
+            deserialize_with = "parse_from_string",
+            default
+        )]
+        backface_cull: bool,
     },
 }
 
@@ -318,6 +363,69 @@ impl<'de> Deserialize<'de> for Colors {
         }
 
         Ok(Self(colors))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Vec3Array(pub Vec<Vec3A>);
+
+impl<'de> Deserialize<'de> for Vec3Array {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+
+        let parts: Vec<_> = s.split_whitespace().collect();
+
+        if parts.len() % 3 != 0 {
+            return Err(serde::de::Error::custom(
+                "Expected a multiple of 3 coordinate components",
+            ));
+        }
+
+        let mut vecs = Vec::new();
+
+        for vec in parts.chunks_exact(3) {
+            let x = vec[0].parse().map_err(serde::de::Error::custom)?;
+            let y = vec[1].parse().map_err(serde::de::Error::custom)?;
+            let z = vec[2].parse().map_err(serde::de::Error::custom)?;
+
+            vecs.push(Vec3A::new(x, y, z));
+        }
+
+        Ok(Self(vecs))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Vec2Array(pub Vec<Vec2>);
+
+impl<'de> Deserialize<'de> for Vec2Array {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+
+        let parts: Vec<_> = s.split_whitespace().collect();
+
+        if parts.len() % 2 != 0 {
+            return Err(serde::de::Error::custom(
+                "Expected a multiple of 2 coordinate components",
+            ));
+        }
+
+        let mut vecs = Vec::new();
+
+        for vec in parts.chunks_exact(3) {
+            let x = vec[0].parse().map_err(serde::de::Error::custom)?;
+            let y = vec[1].parse().map_err(serde::de::Error::custom)?;
+
+            vecs.push(Vec2::new(x, y));
+        }
+
+        Ok(Self(vecs))
     }
 }
 
