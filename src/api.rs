@@ -74,7 +74,7 @@ impl RenderState {
             "cannot render without an object aggregator".into(),
         ))?;
 
-        let aggregator = PrimitiveAggregator::build(aggregator_dto, &self.primitives);
+        let aggregator = PrimitiveAggregator::build(aggregator_dto, self.primitives.clone());
 
         let scene = Scene {
             background,
@@ -187,7 +187,9 @@ impl SceneBuilder {
                         "missing material for object".into(),
                     ))?;
 
-                    Hittable::add_to_array(&mut self.state, object_dto, material_id, file_path)?;
+                    let primitives = Hittable::from_object(object_dto, material_id, file_path)?;
+
+                    self.state.primitives.extend(primitives);
                 }
                 SceneCommand::Material(material_dto) => {
                     let material = material_dto.into();
@@ -227,6 +229,7 @@ impl SceneBuilder {
     }
 }
 
+#[allow(clippy::missing_errors_doc)]
 pub fn run(args: &Cli) -> Result<()> {
     let mut builder = SceneBuilder::new();
 

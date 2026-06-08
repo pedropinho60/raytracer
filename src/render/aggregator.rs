@@ -16,13 +16,16 @@ use crate::{
 pub enum PrimitiveAggregator {
     List(PrimitiveList),
     Bvh(PrimitiveBVH),
+    BvhNode(BVHNode),
 }
 
 impl PrimitiveAggregator {
-    pub fn build(aggregator_dto: AggregatorDTO, list: &[Hittable]) -> Self {
+    pub fn build(aggregator_dto: AggregatorDTO, list: Vec<Hittable>) -> Self {
         match aggregator_dto {
             AggregatorDTO::List => PrimitiveList::new(list).into(),
-            AggregatorDTO::Tree => PrimitiveBVH::new(list).into(),
+            AggregatorDTO::Bvh { max_prims_per_node } => {
+                PrimitiveBVH::new(list, max_prims_per_node).into()
+            }
         }
     }
 }
@@ -32,6 +35,7 @@ impl Hit for PrimitiveAggregator {
         match self {
             PrimitiveAggregator::List(inner) => inner.bounding_box(),
             PrimitiveAggregator::Bvh(inner) => inner.bounding_box(),
+            PrimitiveAggregator::BvhNode(inner) => inner.bounding_box(),
         }
     }
 
@@ -39,6 +43,7 @@ impl Hit for PrimitiveAggregator {
         match self {
             PrimitiveAggregator::List(inner) => inner.intersect(ray, t_min, t_max),
             PrimitiveAggregator::Bvh(inner) => inner.intersect(ray, t_min, t_max),
+            PrimitiveAggregator::BvhNode(inner) => inner.intersect(ray, t_min, t_max),
         }
     }
 
@@ -46,6 +51,7 @@ impl Hit for PrimitiveAggregator {
         match self {
             PrimitiveAggregator::List(inner) => inner.intersect_any(ray, t_min, t_max),
             PrimitiveAggregator::Bvh(inner) => inner.intersect_any(ray, t_min, t_max),
+            PrimitiveAggregator::BvhNode(inner) => inner.intersect_any(ray, t_min, t_max),
         }
     }
 }
@@ -57,13 +63,13 @@ pub struct PrimitiveList {
 }
 
 impl PrimitiveList {
-    pub fn new(list: &[Hittable]) -> Self {
+    pub fn new(list: Vec<Hittable>) -> Self {
         let bbox = list.iter().fold(BoundingBox::EMPTY, |a, b| {
             BoundingBox::join(a, b.bounding_box())
         });
 
         Self {
-            primitives: list.to_vec(),
+            primitives: list,
             bbox,
         }
     }
@@ -98,13 +104,13 @@ impl Hit for PrimitiveList {
 
 #[derive(Debug, Clone)]
 pub struct PrimitiveBVH {
-    root: BVHNode,
+    root: Box<Hittable>,
 }
 
 impl PrimitiveBVH {
-    pub fn new(list: &[Hittable]) -> Self {
+    pub fn new(list: Vec<Hittable>, max_prims_per_node: usize) -> Self {
         Self {
-            root: BVHNode::new(list),
+            root: Box::new(BVHNode::build(list, max_prims_per_node)),
         }
     }
 }
@@ -124,18 +130,22 @@ impl Hit for PrimitiveBVH {
 }
 
 #[derive(Debug, Clone)]
-struct BVHNode {
+pub struct BVHNode {
     left: Box<Hittable>,
     right: Box<Hittable>,
     bbox: BoundingBox,
 }
 
 impl BVHNode {
-    pub fn new(list: &[Hittable]) -> Self {
+    pub fn build(mut list: Vec<Hittable>, max_prims_per_node: usize) -> Hittable {
         let mut bbox = BoundingBox::EMPTY;
 
-        for object in list {
+        for object in &list {
             bbox = BoundingBox::join(bbox, object.bounding_box());
+        }
+
+        if list.len() <= max_prims_per_node {
+            return PrimitiveList::new(list).into();
         }
 
         let axis = bbox.longest_axis();
@@ -146,6 +156,8 @@ impl BVHNode {
             2 => Self::box_z_compare,
             _ => unreachable!(),
         };
+
+        list.sort_unstable_by(comparator);
 
         let left;
         let right;
@@ -159,18 +171,16 @@ impl BVHNode {
                 left = Box::new(list[0].clone());
                 right = Box::new(list[1].clone());
             }
-            _ => {
-                let mut vec = list.to_vec();
-                vec.sort_unstable_by(comparator);
+            n => {
+                let mid = n / 2;
+                let right_list = list.split_off(mid);
 
-                let mid = list.len() / 2;
-
-                left = Box::new(Self::new(&list[..mid]).into());
-                right = Box::new(Self::new(&list[mid..]).into());
+                left = Box::new(Self::build(list, max_prims_per_node));
+                right = Box::new(Self::build(right_list, max_prims_per_node));
             }
         }
 
-        Self { left, right, bbox }
+        Self { left, right, bbox }.into()
     }
 
     fn box_compare(a: &Hittable, b: &Hittable, axis_index: usize) -> Ordering {
@@ -233,6 +243,8 @@ impl Hit for BVHNode {
 
 impl From<BVHNode> for Hittable {
     fn from(value: BVHNode) -> Self {
-        Self::Aggregate(PrimitiveAggregator::Bvh(PrimitiveBVH { root: value }))
+        Self::Aggregate(PrimitiveAggregator::Bvh(PrimitiveBVH {
+            root: Box::new(Hittable::Aggregate(PrimitiveAggregator::BvhNode(value))),
+        }))
     }
 }

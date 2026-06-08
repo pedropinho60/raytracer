@@ -191,6 +191,18 @@ pub enum TriangleMeshDTO {
     File {
         #[serde(rename = "@filename")]
         filename: String,
+        #[serde(
+            rename = "@reverse_vertex_order",
+            deserialize_with = "parse_from_string",
+            default
+        )]
+        reverse_vertex_order: bool,
+        #[serde(
+            rename = "@backface_cull",
+            deserialize_with = "parse_optional_from_string",
+            default
+        )]
+        backface_cull: Option<bool>,
     },
     Inline {
         #[serde(rename = "@ntriangles", deserialize_with = "parse_from_string")]
@@ -221,10 +233,10 @@ pub enum TriangleMeshDTO {
         compute_normals: Option<bool>,
         #[serde(
             rename = "@backface_cull",
-            deserialize_with = "parse_from_string",
+            deserialize_with = "parse_optional_from_string",
             default
         )]
-        backface_cull: bool,
+        backface_cull: Option<bool>,
     },
 }
 
@@ -295,7 +307,10 @@ pub enum IntegratorDTO {
 #[serde(rename_all = "snake_case")]
 pub enum AggregatorDTO {
     List,
-    Tree,
+    Bvh {
+        #[serde(rename = "@max_prims_per_node", deserialize_with = "parse_from_string")]
+        max_prims_per_node: usize,
+    },
 }
 
 #[derive(Debug, Clone, Copy)]

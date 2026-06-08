@@ -19,6 +19,7 @@ impl Background {
         }
     }
 
+    #[allow(dead_code)]
     pub fn sample_ray(&self, ray: Ray) -> Color {
         match self {
             Background::SingleColor(inner) => inner.color,

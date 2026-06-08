@@ -6,14 +6,14 @@ use crate::{
     core::ray::Ray,
     geometry::{
         bounding_box::{BoundingBox, Interval},
+        hittable::Hittable,
+        primitive::Primitive,
         surfel::HitRecord,
     },
 };
 
 #[derive(Debug, Clone)]
 pub struct TriangleMesh {
-    pub n_triangles: usize,
-
     pub vertex_indices: Vec<u32>,
     pub normal_indices: Vec<u32>,
     pub uvcoord_indices: Vec<u32>,
@@ -21,6 +21,91 @@ pub struct TriangleMesh {
     pub vertices: Vec<Vec3A>,
     pub normals: Vec<Vec3A>,
     pub uvcoords: Vec<Vec2>,
+}
+
+impl TriangleMesh {
+    pub fn from_obj(
+        models: &[tobj::Model],
+        reverse_vertex_order: bool,
+        backface_cull: bool,
+        material_id: usize,
+    ) -> Vec<Hittable> {
+        let mut triangles = Vec::new();
+
+        for model in models {
+            let tobj_mesh = &model.mesh;
+
+            let vertices: Vec<Vec3A> = tobj_mesh
+                .positions
+                .chunks_exact(3)
+                .map(|c| Vec3A::new(c[0], c[1], c[2]))
+                .collect();
+
+            let normals: Vec<Vec3A> = tobj_mesh
+                .normals
+                .chunks_exact(3)
+                .map(|c| Vec3A::new(c[0], c[1], c[2]))
+                .collect();
+
+            let mut uvcoords: Vec<Vec2> = tobj_mesh
+                .texcoords
+                .chunks_exact(2)
+                .map(|c| Vec2::new(c[0], c[1]))
+                .collect();
+
+            let mut vertex_indices = tobj_mesh.indices.clone();
+            let mut normal_indices = tobj_mesh.normal_indices.clone();
+            let mut uvcoord_indices = tobj_mesh.texcoord_indices.clone();
+
+            let n_triangles = vertex_indices.len() / 3;
+
+            if n_triangles == 0 {
+                continue;
+            }
+
+            if uvcoords.is_empty() {
+                uvcoords = vec![Vec2::ZERO];
+                uvcoord_indices = vec![0; n_triangles * 3];
+            }
+
+            if reverse_vertex_order {
+                for i in (0..vertex_indices.len()).step_by(3) {
+                    vertex_indices.swap(i + 1, i + 2);
+                }
+
+                if !normal_indices.is_empty() {
+                    for i in (0..normal_indices.len()).step_by(3) {
+                        normal_indices.swap(i + 1, i + 2);
+                    }
+                }
+
+                for i in (0..uvcoord_indices.len()).step_by(3) {
+                    uvcoord_indices.swap(i + 1, i + 2);
+                }
+            }
+
+            let mesh = Arc::new(TriangleMesh {
+                vertex_indices,
+                normal_indices,
+                uvcoord_indices,
+                vertices,
+                normals,
+                uvcoords,
+            });
+
+            for i in 0..n_triangles {
+                triangles.push(
+                    Primitive::new(
+                        Triangle::new(mesh.clone(), i, backface_cull).into(),
+                        material_id,
+                    )
+                    .into(),
+                );
+            }
+        }
+
+        triangles
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -165,6 +250,10 @@ impl Triangle {
 
         let mut np = w * n0 + u * n1 + v * n2;
         np = np.normalize();
+
+        if ray.direction.dot(np) > 0.0 {
+            np = -np;
+        }
 
         let uv0 = self.mesh.uvcoords[self.uv[0] as usize];
         let uv1 = self.mesh.uvcoords[self.uv[1] as usize];
