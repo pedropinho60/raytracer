@@ -7,7 +7,7 @@
 
         <!-- Lights -->
         <light_source type="directional" I="0.9 0.6 0.5" scale="1 1 1" from="-5 -5 10" to="0 0 0" />
-        <!-- <light_source type="directional" I="0.9 0.9 0.9" scale="1 1 1" from=" 5 -5 10" to="0 0 0" /> -->
+        <light_source type="directional" I="0.9 0.9 0.9" scale="1 1 1" from=" 5 -5 10" to="0 0 0" />
 
         <!-- Material Library -->
         <include filename="teapot_materials.xml" />
@@ -15,7 +15,7 @@
         <!-- Objects -->
         <!-- <named_material name="gold"/> -->
         <named_material name="jade"/>
-        <object type="trianglemesh" filename="teapot.obj"/>
+        <object type="trianglemesh" filename="teapot.obj" backface_cull="false"/>
 
         <named_material name="indigo"/>
         <object type="trianglemesh"
