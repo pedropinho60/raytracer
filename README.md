@@ -1,16 +1,37 @@
 # Raytracer
 
-A ray tracing-based 3d image renderer written in rust.
+Ray tracer desenvolvido como projeto de avaliação para a disciplina de Computação Gráfica I.
 
-# Compiling
+# Componentes
 
-With [rust](https://rustup.rs) installed, run the following command to compile and run the raytracer:
+Giovanna Batista e Pedro Vinícius.
+
+# Compilação
+
+Com [rust](https://rustup.rs) instalado, execute o comando a seguir para compilar e executar o ray tracer:
 ```
-cargo run --release -- <scene_file>
+cargo run --release -- <arquivo_de_cena>
 ```
 
-There is also a scene generator for a pyramid of spheres, which can be run with:
+# Funcionalidades
+
+- Geração de imagem nos formatos PPM e PNG.
+- Plano de fundo com gradiente ou cor sólida.
+- Câmeras ortográfica e de perspectiva.
+- Integradores `flat`, `normal_map`, `blinn_phong` e `cel_shading`.
+- Luzes de tipos `ambient`, `point`, `directional` e `spotlight`.
+- Materiais `flat`, `blinn`, `cel` e `checkerboard`.
+- Suporte a esferas, planos infinitos e malhas triangulares.
+- Leitura de malhas de arquivos `.obj`.
+- Acelerador de renderização com `BVH`.
+
+# Extras
+
+- Integrador `normal_map`.
+- Atenuação de luz.
+
+Também há um gerador de cena com uma pirâmide de esferas, que pode ser executado com:
 ```
-cargo run --release --bin sphere_pyramid -- <pyramid_height>
+cargo run --release --bin sphere_pyramid -- <altura_da_piramide>
 ```
-This will generate the file `scenes/scene_pyramid.xml`.
+Isso irá gerar o arquivo `scenes/scene_pyramid.xml`.
