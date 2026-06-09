@@ -29,6 +29,7 @@ cargo run --release -- <arquivo_de_cena>
 
 - Integrador `normal_map`.
 - Atenuação de luz.
+- Efeitos de dithering com `bayer`, `white_noise` e `blue_noise`.
 
 Também há um gerador de cena com uma pirâmide de esferas, que pode ser executado com:
 ```

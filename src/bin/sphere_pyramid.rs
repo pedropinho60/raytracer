@@ -45,7 +45,7 @@ fn main() -> anyhow::Result<()> {
     <integrator type="blinn_phong" depth="3" />
     <film type="image" w_res="{img_width}" h_res="{img_height}" filename="sphere_pyramid.png" img_type="png" gamma_corrected="false" />
 
-    <aggregator type="tree"/>
+    <aggregator type="bvh" max_prims_per_node="4"/>
 
     <world_begin/>
         <!-- The Background -->
