@@ -7,7 +7,7 @@ use crate::{
 pub struct RayCastIntegrator;
 
 impl RayCastIntegrator {
-    pub fn li(ray: Ray, scene: &Scene) -> Option<Color> {
+    pub fn li(ray: &mut Ray, scene: &Scene) -> Option<Color> {
         let isect = scene.intersect(ray)?;
 
         let material = scene.get_material(isect.material_id)?;

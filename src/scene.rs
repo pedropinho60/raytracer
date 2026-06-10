@@ -18,12 +18,12 @@ pub struct Scene<'a> {
 }
 
 impl Scene<'_> {
-    pub fn intersect(&self, ray: Ray) -> Option<Surfel> {
-        self.primitives.intersect(ray, 0.001, f32::INFINITY)
+    pub fn intersect(&self, ray: &mut Ray) -> Option<Surfel> {
+        self.primitives.intersect(ray)
     }
 
-    pub fn is_occluded(&self, ray: Ray, distance: f32) -> bool {
-        self.primitives.intersect_any(ray, 0.001, distance)
+    pub fn is_occluded(&self, ray: &mut Ray) -> bool {
+        self.primitives.intersect_any(ray)
     }
 
     pub fn get_material(&self, index: usize) -> Option<&Material> {

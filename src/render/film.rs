@@ -116,8 +116,6 @@ impl Film {
         let mut encoder = png::Encoder::new(out, self.width.into(), self.height.into());
         encoder.set_color(png::ColorType::Rgb);
         encoder.set_depth(png::BitDepth::Eight);
-        encoder.set_compression(png::Compression::NoCompression);
-        encoder.set_filter(png::Filter::NoFilter);
 
         let mut writer = encoder.write_header()?;
 

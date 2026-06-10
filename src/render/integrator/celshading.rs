@@ -18,7 +18,7 @@ impl CelShadingIntegrator {
         Self { cos_thresholds }
     }
 
-    pub fn li(&self, ray: Ray, scene: &Scene) -> Option<Color> {
+    pub fn li(&self, ray: &mut Ray, scene: &Scene) -> Option<Color> {
         let isect = scene.intersect(ray)?;
 
         let material = scene.get_material(isect.material_id).unwrap();
@@ -53,12 +53,10 @@ impl CelShadingIntegrator {
                     let l = direction.normalize();
                     let intensity = point_light.intensity * point_light.attenuation(distance);
 
-                    let shadow_ray = Ray {
-                        origin: isect.point,
-                        direction: l,
-                    };
+                    let mut shadow_ray = Ray::new(isect.point, l);
+                    shadow_ray.t_max = distance;
 
-                    if scene.is_occluded(shadow_ray, distance) {
+                    if scene.is_occluded(&mut shadow_ray) {
                         color = material.shadow_color;
                         continue;
                     }
@@ -68,12 +66,9 @@ impl CelShadingIntegrator {
                 Light::Directional(directional_light) => {
                     let l = -directional_light.direction;
 
-                    let shadow_ray = Ray {
-                        origin: isect.point,
-                        direction: l,
-                    };
+                    let mut shadow_ray = Ray::new(isect.point, l);
 
-                    if scene.is_occluded(shadow_ray, f32::INFINITY) {
+                    if scene.is_occluded(&mut shadow_ray) {
                         color = material.shadow_color;
                         continue;
                     }
@@ -102,12 +97,10 @@ impl CelShadingIntegrator {
                         spotlight.intensity
                     };
 
-                    let shadow_ray = Ray {
-                        origin: isect.point,
-                        direction: l,
-                    };
+                    let mut shadow_ray = Ray::new(isect.point, l);
+                    shadow_ray.t_max = distance;
 
-                    if scene.is_occluded(shadow_ray, distance) {
+                    if scene.is_occluded(&mut shadow_ray) {
                         color = material.shadow_color;
                         continue;
                     }

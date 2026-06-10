@@ -35,8 +35,8 @@ impl Hit for Primitive {
         self.shape.bounding_box()
     }
 
-    fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<Surfel> {
-        let hit = self.shape.intersect(ray, t_min, t_max)?;
+    fn intersect(&self, ray: &mut Ray) -> Option<Surfel> {
+        let hit = self.shape.intersect(ray)?;
 
         Some(Surfel {
             point: hit.point,
@@ -48,8 +48,8 @@ impl Hit for Primitive {
         })
     }
 
-    fn intersect_any(&self, ray: Ray, t_min: f32, t_max: f32) -> bool {
-        self.shape.intersect_any(ray, t_min, t_max)
+    fn intersect_any(&self, ray: &mut Ray) -> bool {
+        self.shape.intersect_any(ray)
     }
 }
 
@@ -68,19 +68,19 @@ impl Shape {
             Shape::Triangle(inner) => inner.bounding_box(),
         }
     }
-    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    pub fn intersect(&self, ray: &mut Ray) -> Option<HitRecord> {
         match self {
-            Shape::Sphere(inner) => inner.intersect(ray, t_min, t_max),
-            Shape::Plane(inner) => inner.intersect(ray, t_min, t_max),
-            Shape::Triangle(inner) => inner.intersect(ray, t_min, t_max),
+            Shape::Sphere(inner) => inner.intersect(ray),
+            Shape::Plane(inner) => inner.intersect(ray),
+            Shape::Triangle(inner) => inner.intersect(ray),
         }
     }
 
-    pub fn intersect_any(&self, ray: Ray, t_min: f32, t_max: f32) -> bool {
+    pub fn intersect_any(&self, ray: &mut Ray) -> bool {
         match self {
-            Shape::Sphere(inner) => inner.intersect_any(ray, t_min, t_max),
-            Shape::Plane(inner) => inner.intersect_any(ray, t_min, t_max),
-            Shape::Triangle(inner) => inner.intersect_any(ray, t_min, t_max),
+            Shape::Sphere(inner) => inner.intersect_any(ray),
+            Shape::Plane(inner) => inner.intersect_any(ray),
+            Shape::Triangle(inner) => inner.intersect_any(ray),
         }
     }
 }

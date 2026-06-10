@@ -9,7 +9,7 @@ use crate::{
 pub struct NormalMapIntegrator;
 
 impl NormalMapIntegrator {
-    pub fn li(ray: Ray, scene: &Scene) -> Option<Color> {
+    pub fn li(ray: &mut Ray, scene: &Scene) -> Option<Color> {
         let isect = scene.intersect(ray)?;
 
         let normal = (isect.normal + Vec3A::ONE) / 2.0;

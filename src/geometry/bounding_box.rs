@@ -1,145 +1,120 @@
-use std::ops::Index;
-
 use glam::Vec3A;
 
 use crate::core::ray::Ray;
 
 #[derive(Debug, Clone, Copy)]
-pub struct Interval {
-    pub min: f32,
-    pub max: f32,
-}
-
-impl Interval {
-    pub const EMPTY: Self = Interval {
-        min: f32::INFINITY,
-        max: f32::NEG_INFINITY,
-    };
-
-    #[allow(dead_code)]
-    pub const UNIVERSE: Self = Interval {
-        min: f32::NEG_INFINITY,
-        max: f32::INFINITY,
-    };
-
-    pub fn new(min: f32, max: f32) -> Self {
-        let min = f32::min(min, max);
-        let max = f32::max(min, max);
-        Self { min, max }
-    }
-
-    pub fn join(a: Interval, b: Interval) -> Self {
-        Self {
-            min: f32::min(a.min, b.min),
-            max: f32::max(a.max, b.max),
-        }
-    }
-
-    pub fn size(self) -> f32 {
-        self.max - self.min
-    }
-
-    #[allow(dead_code)]
-    pub fn expand(self, delta: f32) -> Self {
-        let padding = delta / 2.0;
-        Interval::new(self.min - padding, self.max + padding)
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
 pub struct BoundingBox {
-    pub x: Interval,
-    pub y: Interval,
-    pub z: Interval,
+    pub min: Vec3A,
+    pub max: Vec3A,
 }
 
 impl BoundingBox {
     pub const EMPTY: Self = Self {
-        x: Interval::EMPTY,
-        y: Interval::EMPTY,
-        z: Interval::EMPTY,
+        min: Vec3A::INFINITY,
+        max: Vec3A::NEG_INFINITY,
     };
 
     pub const UNIVERSE: Self = Self {
-        x: Interval::UNIVERSE,
-        y: Interval::UNIVERSE,
-        z: Interval::UNIVERSE,
+        min: Vec3A::NEG_INFINITY,
+        max: Vec3A::INFINITY,
     };
 
     pub fn new(a: Vec3A, b: Vec3A) -> Self {
-        Self {
-            x: Interval::new(a.x, b.x),
-            y: Interval::new(a.y, b.y),
-            z: Interval::new(a.z, b.z),
-        }
+        let mut bbox = Self {
+            min: a.min(b),
+            max: b.max(a),
+        };
+        bbox.pad_to_minimums();
+        bbox
     }
 
     pub fn join(a: BoundingBox, b: BoundingBox) -> Self {
         Self {
-            x: Interval::join(a.x, b.x),
-            y: Interval::join(a.y, b.y),
-            z: Interval::join(a.z, b.z),
+            min: a.min.min(b.min),
+            max: a.max.max(b.max),
         }
     }
 
-    pub fn expand(self, delta: f32) -> Self {
-        Self {
-            x: self.x.expand(delta),
-            y: self.y.expand(delta),
-            z: self.z.expand(delta),
+    pub fn expand_by_box(&mut self, other: &BoundingBox) {
+        self.min = self.min.min(other.min);
+        self.max = self.max.max(other.max);
+    }
+
+    pub fn expand_by_point(&mut self, point: Vec3A) {
+        self.min = self.min.min(point);
+        self.max = self.max.max(point);
+    }
+
+    fn pad_to_minimums(&mut self) {
+        let delta = 1e-4;
+
+        if self.max.x - self.min.x < delta {
+            self.min.x -= delta;
+            self.max.x += delta;
+        }
+        if self.max.y - self.min.y < delta {
+            self.min.y -= delta;
+            self.max.y += delta;
+        }
+        if self.max.z - self.min.z < delta {
+            self.min.z -= delta;
+            self.max.z += delta;
         }
     }
 
-    pub fn longest_axis(&self) -> usize {
-        if self.x.size() > self.y.size() {
-            if self.x.size() > self.z.size() { 0 } else { 2 }
-        } else {
-            if self.y.size() > self.z.size() { 1 } else { 2 }
-        }
-    }
-
-    pub fn hit(&self, ray: Ray, mut ray_t: Interval) -> bool {
-        for axis in 0..3 {
-            let ax = self[axis];
-            let adinv = 1.0 / ray.direction[axis];
-
-            let t0 = (ax.min - ray.origin[axis]) * adinv;
-            let t1 = (ax.max - ray.origin[axis]) * adinv;
-
-            if t0 < t1 {
-                if t0 > ray_t.min {
-                    ray_t.min = t0;
-                }
-                if t1 < ray_t.max {
-                    ray_t.max = t1;
-                }
+    pub fn longest_axis(&self) -> u8 {
+        if self.max.x - self.min.x > self.max.y - self.min.y {
+            if self.max.x - self.min.x > self.max.z - self.min.z {
+                0
             } else {
-                if t1 > ray_t.min {
-                    ray_t.min = t1;
-                }
-                if t0 < ray_t.max {
-                    ray_t.max = t0;
-                }
+                2
             }
+        } else {
+            if self.max.y - self.min.y > self.max.z - self.min.z {
+                1
+            } else {
+                2
+            }
+        }
+    }
 
-            if ray_t.max <= ray_t.min {
+    pub fn longest_axis_len(&self) -> f32 {
+        let axis = self.longest_axis() as usize;
+
+        self.max[axis] - self.min[axis]
+    }
+
+    pub fn hit(&self, ray: &mut Ray) -> bool {
+        let mut t_min = ray.t_min;
+        let mut t_max = ray.t_max;
+
+        for axis in 0..3 {
+            let inv_d = ray.inv_dir[axis];
+
+            let t0 = (self.min[axis] - ray.origin[axis]) * inv_d;
+            let t1 = (self.max[axis] - ray.origin[axis]) * inv_d;
+
+            let (t_near, t_far) = if inv_d < 0.0 { (t1, t0) } else { (t0, t1) };
+
+            t_min = if t_near > t_min { t_near } else { t_min };
+            t_max = if t_far < t_max { t_far } else { t_max };
+
+            if t_max < t_min {
                 return false;
             }
         }
 
         true
     }
-}
 
-impl Index<usize> for BoundingBox {
-    type Output = Interval;
+    #[inline]
+    pub fn surface_area(&self) -> f32 {
+        let d = self.max - self.min;
 
-    fn index(&self, index: usize) -> &Self::Output {
-        match index {
-            0 => &self.x,
-            1 => &self.y,
-            2 => &self.z,
-            _ => panic!("index out of bounds"),
+        if d.x < 0.0 || d.y < 0.0 || d.z < 0.0 {
+            return 0.0;
         }
+
+        2.0 * (d.x * d.y + d.x * d.z + d.y * d.z)
     }
 }

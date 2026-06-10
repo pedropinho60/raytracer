@@ -13,7 +13,7 @@ impl BlinnPhongIntegrator {
         Self { max_depth: depth }
     }
 
-    pub fn li(&self, ray: Ray, scene: &Scene, depth: u8) -> Option<Color> {
+    pub fn li(&self, ray: &mut Ray, scene: &Scene, depth: u8) -> Option<Color> {
         let isect = scene.intersect(ray)?;
 
         let material = scene.get_material(isect.material_id).unwrap();
@@ -53,12 +53,10 @@ impl BlinnPhongIntegrator {
                     let l = direction.normalize();
                     let intensity = point_light.intensity * point_light.attenuation(distance);
 
-                    let shadow_ray = Ray {
-                        origin: isect.point,
-                        direction: l,
-                    };
+                    let mut shadow_ray = Ray::new(isect.point, l);
+                    shadow_ray.t_max = distance;
 
-                    if scene.is_occluded(shadow_ray, distance) {
+                    if scene.is_occluded(&mut shadow_ray) {
                         continue;
                     }
 
@@ -67,12 +65,9 @@ impl BlinnPhongIntegrator {
                 Light::Directional(directional_light) => {
                     let l = -directional_light.direction;
 
-                    let shadow_ray = Ray {
-                        origin: isect.point,
-                        direction: l,
-                    };
+                    let mut shadow_ray = Ray::new(isect.point, l);
 
-                    if scene.is_occluded(shadow_ray, f32::INFINITY) {
+                    if scene.is_occluded(&mut shadow_ray) {
                         continue;
                     }
 
@@ -99,12 +94,10 @@ impl BlinnPhongIntegrator {
                         spotlight.intensity
                     };
 
-                    let shadow_ray = Ray {
-                        origin: isect.point,
-                        direction: l,
-                    };
+                    let mut shadow_ray = Ray::new(isect.point, l);
+                    shadow_ray.t_max = distance;
 
-                    if scene.is_occluded(shadow_ray, distance) {
+                    if scene.is_occluded(&mut shadow_ray) {
                         continue;
                     }
 
@@ -124,15 +117,13 @@ impl BlinnPhongIntegrator {
             color += diffuse_term + specular_term;
         }
 
-        let reflected_ray = Ray {
-            origin: isect.point,
-            direction: ray.direction - 2.0 * ray.direction.dot(n) * n,
-        };
+        let mut reflected_ray =
+            Ray::new(isect.point, ray.direction - 2.0 * ray.direction.dot(n) * n);
 
         if depth < self.max_depth && km != Color::BLACK {
             color += km
                 * self
-                    .li(reflected_ray, scene, depth + 1)
+                    .li(&mut reflected_ray, scene, depth + 1)
                     .unwrap_or(Color::BLACK);
         }
 

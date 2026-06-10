@@ -5,10 +5,7 @@ use glam::{Vec2, Vec3A};
 use crate::{
     core::ray::Ray,
     geometry::{
-        bounding_box::{BoundingBox, Interval},
-        hittable::Hittable,
-        primitive::Primitive,
-        surfel::HitRecord,
+        bounding_box::BoundingBox, hittable::Hittable, primitive::Primitive, surfel::HitRecord,
     },
 };
 
@@ -161,15 +158,13 @@ impl Triangle {
         let z_min = v0.z.min(v1.z).min(v2.z);
         let z_max = v0.z.max(v1.z).max(v2.z);
 
-        BoundingBox {
-            x: Interval::new(x_min, x_max),
-            y: Interval::new(y_min, y_max),
-            z: Interval::new(z_min, z_max),
-        }
-        .expand(1e-2)
+        BoundingBox::new(
+            Vec3A::new(x_min, y_min, z_min),
+            Vec3A::new(x_max, y_max, z_max),
+        )
     }
 
-    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    pub fn intersect(&self, ray: &mut Ray) -> Option<HitRecord> {
         let v0 = self.mesh.vertices[self.v[0] as usize];
         let v1 = self.mesh.vertices[self.v[1] as usize];
         let v2 = self.mesh.vertices[self.v[2] as usize];
@@ -236,7 +231,7 @@ impl Triangle {
             t = edge2.dot(qvec) * inv_det;
         }
 
-        if t < t_min || t > t_max {
+        if t < ray.t_min || t > ray.t_max {
             return None;
         }
 
@@ -270,7 +265,7 @@ impl Triangle {
         })
     }
 
-    pub fn intersect_any(&self, ray: Ray, t_min: f32, t_max: f32) -> bool {
+    pub fn intersect_any(&self, ray: &mut Ray) -> bool {
         let v0 = self.mesh.vertices[self.v[0] as usize];
         let v1 = self.mesh.vertices[self.v[1] as usize];
         let v2 = self.mesh.vertices[self.v[2] as usize];
@@ -335,7 +330,7 @@ impl Triangle {
             t = edge2.dot(qvec) * inv_det;
         }
 
-        if t < t_min || t > t_max {
+        if t < ray.t_min || t > ray.t_max {
             return false;
         }
 

@@ -16,7 +16,7 @@ impl Plane {
         }
     }
 
-    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    pub fn intersect(&self, ray: &mut Ray) -> Option<HitRecord> {
         let denom = self.normal.dot(ray.direction);
 
         if denom.abs() < 1e-6 {
@@ -26,7 +26,7 @@ impl Plane {
         let p0l0 = self.point - ray.origin;
         let t = p0l0.dot(self.normal) / denom;
 
-        if t < t_min || t > t_max {
+        if t < ray.t_min || t > ray.t_max {
             return None;
         }
 
@@ -62,7 +62,7 @@ impl Plane {
         })
     }
 
-    pub fn intersect_any(&self, ray: Ray, t_min: f32, t_max: f32) -> bool {
+    pub fn intersect_any(&self, ray: &mut Ray) -> bool {
         let denom = self.normal.dot(ray.direction);
 
         if denom.abs() < 1e-6 {
@@ -71,6 +71,6 @@ impl Plane {
 
         let t = (self.point - ray.origin).dot(self.normal) / denom;
 
-        t > t_min && t < t_max
+        t > ray.t_min && t < ray.t_max
     }
 }

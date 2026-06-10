@@ -12,13 +12,13 @@ use crate::{
         surfel::Surfel,
     },
     parse::dto::{ObjectDTO, TriangleMeshDTO},
-    render::aggregator::{PrimitiveAggregator, PrimitiveBVH, PrimitiveList},
+    render::aggregator::{Bvh, PrimitiveAggregator, PrimitiveList},
 };
 
 pub trait Hit {
     fn bounding_box(&self) -> BoundingBox;
-    fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<Surfel>;
-    fn intersect_any(&self, ray: Ray, t_min: f32, t_max: f32) -> bool;
+    fn intersect(&self, ray: &mut Ray) -> Option<Surfel>;
+    fn intersect_any(&self, ray: &mut Ray) -> bool;
 }
 
 #[derive(Debug, Clone, From)]
@@ -115,8 +115,8 @@ impl From<PrimitiveList> for Hittable {
     }
 }
 
-impl From<PrimitiveBVH> for Hittable {
-    fn from(value: PrimitiveBVH) -> Self {
+impl From<Bvh> for Hittable {
+    fn from(value: Bvh) -> Self {
         Self::Aggregate(PrimitiveAggregator::from(value))
     }
 }
@@ -129,17 +129,17 @@ impl Hit for Hittable {
         }
     }
 
-    fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<Surfel> {
+    fn intersect(&self, ray: &mut Ray) -> Option<Surfel> {
         match self {
-            Hittable::Primitive(inner) => inner.intersect(ray, t_min, t_max),
-            Hittable::Aggregate(inner) => inner.intersect(ray, t_min, t_max),
+            Hittable::Primitive(inner) => inner.intersect(ray),
+            Hittable::Aggregate(inner) => inner.intersect(ray),
         }
     }
 
-    fn intersect_any(&self, ray: Ray, t_min: f32, t_max: f32) -> bool {
+    fn intersect_any(&self, ray: &mut Ray) -> bool {
         match self {
-            Hittable::Primitive(inner) => inner.intersect_any(ray, t_min, t_max),
-            Hittable::Aggregate(inner) => inner.intersect_any(ray, t_min, t_max),
+            Hittable::Primitive(inner) => inner.intersect_any(ray),
+            Hittable::Aggregate(inner) => inner.intersect_any(ray),
         }
     }
 }

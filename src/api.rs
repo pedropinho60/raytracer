@@ -74,6 +74,8 @@ impl RenderState {
             "cannot render without an object aggregator".into(),
         ))?;
 
+        let start = Instant::now();
+
         let aggregator = PrimitiveAggregator::build(aggregator_dto, self.primitives.clone());
 
         let scene = Scene {
@@ -96,7 +98,7 @@ impl RenderState {
         let image_elapsed = image_start.elapsed();
         println!("Time to write image: {image_elapsed:?}");
 
-        let total = render_start.elapsed();
+        let total = start.elapsed();
         println!("Total time: {total:?}");
 
         Ok(())

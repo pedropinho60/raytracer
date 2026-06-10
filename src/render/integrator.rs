@@ -70,18 +70,18 @@ impl SamplerIntegrator {
             .for_each(|(row, buf)| {
                 let normalized_row = row as f32 / inv_height;
                 for (col, pixel) in buf.iter_mut().enumerate() {
-                    let ray = camera.generate_ray(row, col, width, height);
+                    let mut ray = camera.generate_ray(row, col, width, height);
 
                     let normalized_col = col as f32 / inv_width;
 
                     *pixel = self
-                        .li(ray, scene)
+                        .li(&mut ray, scene)
                         .unwrap_or_else(|| scene.background.sample(normalized_row, normalized_col));
                 }
             });
     }
 
-    fn li(&self, ray: Ray, scene: &Scene) -> Option<Color> {
+    fn li(&self, ray: &mut Ray, scene: &Scene) -> Option<Color> {
         match self {
             SamplerIntegrator::RayCast(_) => RayCastIntegrator::li(ray, scene),
             SamplerIntegrator::NormalMap(_) => NormalMapIntegrator::li(ray, scene),

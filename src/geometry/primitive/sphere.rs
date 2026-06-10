@@ -16,7 +16,7 @@ impl Sphere {
         BoundingBox::new(self.center - self.radius, self.center + self.radius)
     }
 
-    pub fn intersect(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    pub fn intersect(&self, ray: &mut Ray) -> Option<HitRecord> {
         let o = ray.origin;
 
         let oc = o - self.center;
@@ -38,9 +38,9 @@ impl Sphere {
         let t2 = t_c + t_half;
 
         let mut t = t1;
-        if t < t_min || t > t_max {
+        if t < ray.t_min || t > ray.t_max {
             t = t2;
-            if t < t_min || t > t_max {
+            if t < ray.t_min || t > ray.t_max {
                 return None;
             }
         }
@@ -71,7 +71,7 @@ impl Sphere {
         })
     }
 
-    pub fn intersect_any(&self, ray: Ray, t_min: f32, t_max: f32) -> bool {
+    pub fn intersect_any(&self, ray: &mut Ray) -> bool {
         let oc = ray.origin - self.center;
 
         let parallel_len = oc.dot(ray.direction);
@@ -87,12 +87,12 @@ impl Sphere {
         let t_half = delta.sqrt();
 
         let t1 = t_c - t_half;
-        if t1 > t_min && t1 < t_max {
+        if t1 > ray.t_min && t1 < ray.t_max {
             return true;
         }
 
         let t2 = t_c + t_half;
-        if t2 > t_min && t2 < t_max {
+        if t2 > ray.t_min && t2 < ray.t_max {
             return true;
         }
 
