@@ -6,26 +6,28 @@
         <!-- <background type="colors" bl="0.6 0.8 1" tl="0.04 0.04 0.04" tr="0.04 0.04 0.04" br="0.6 0.8 1" /> -->
 
         <!-- Lights -->
-        <light_source type="directional" I="0.9 0.6 0.5" scale="1 1 1" from="-5 -5 10" to="0 0 0" />
-        <light_source type="directional" I="0.9 0.9 0.9" scale="1 1 1" from=" 5 -5 10" to="0 0 0" />
+        <light_source type="directional" I="0.9 0.6 0.5" scale="1 1 1" from="5 5 -10" to="0 0 0" />
+        <light_source type="directional" I="0.9 0.9 0.9" scale="1 1 1" from=" 5 5 10" to="0 0 0" />
 
         <!-- Material Library -->
         <include filename="teapot_materials.xml" />
 
         <!-- Objects -->
         <!-- <named_material name="gold"/> -->
-        <named_material name="jade"/>
-        <object type="trianglemesh" filename="teapot.obj" backface_cull="false"/>
+        <named_material name="pinkish"/>
+        <object type="trianglemesh" filename="../new teapot/body.obj"/>
+        <named_material name="blueish"/>
+        <object type="trianglemesh" filename="../new teapot/lid.obj"/>
 
-        <named_material name="indigo"/>
-        <object type="trianglemesh"
-                ntriangles ="2"
-                vertices="-30 30.5 -1  30 30.5 -1  30 -30.5 -1  -30 -30.5 -1"
-                vertex_indices ="0 1 2   0 2 3"
-                normal_indices ="0 0 0   0 0 0"
-                normals ="0 0 1"
-                reverse_vertex_order="false"
-                backface_cull ="false"/>
-
+        <!-- <named_material name="indigo"/> -->
+        <!-- <object type="trianglemesh" -->
+        <!--         ntriangles ="2" -->
+        <!--         vertices="-30 30.5 -1  30 30.5 -1  30 -30.5 -1  -30 -30.5 -1" -->
+        <!--         vertex_indices ="0 1 2   0 2 3" -->
+        <!--         normal_indices ="0 0 0   0 0 0" -->
+        <!--         normals ="0 0 1" -->
+        <!--         reverse_vertex_order="false" -->
+        <!--         backface_cull ="false"/> -->
+        <!---->
     <world_end/>
 </RT3>

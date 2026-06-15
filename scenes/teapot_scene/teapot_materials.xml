@@ -5,6 +5,7 @@
         <make_named_material type="blinn" name="redish"   ambient="0.6 0.6 0.6" diffuse ="0.9 0.2 0.1"  specular ="0.8 0.8 0.8" mirror ="0.0 0.0 0.0" glossiness ="64"/>
         <make_named_material type="blinn" name="greenish" ambient="0.6 0.6 0.6" diffuse ="0.2 0.9 0.2"  specular ="0.8 0.8 0.8" mirror ="0.0 0.0 0.0" glossiness ="256"/>
         <make_named_material type="blinn" name="blueish"  ambient="0.6 0.6 0.6" diffuse ="0.1 0.2 0.9"  specular ="0.8 0.8 0.8" mirror ="0.0 0.0 0.0" glossiness ="16"/>
+        <make_named_material type="blinn" name="pinkish"  ambient="0.6 0.6 0.6" diffuse ="1.0 0.475 0.71"  specular ="0.8 0.8 0.8" mirror ="0.0 0.0 0.0" glossiness ="16"/>
         <make_named_material type="blinn" name="red_3"    ambient="0.6 0.6 0.6" diffuse ="1 0.6 0.6"    specular ="0.8 0.8 0.8" mirror ="0.3 0.3 0.3" glossiness ="64"/>
         <make_named_material type="blinn" name="jade"     ambient="0.6 0.6 0.6" diffuse ="0 0.65 0.29"  specular ="0.8 0.8 0.8" mirror ="0.4 0.4 0.4" glossiness ="128"/>
         <make_named_material type="blinn" name="indigo"   ambient="0.2 0.2 0.2" diffuse ="0.2 0 0.4"  specular ="0.9 0.9 0.9" mirror ="0.2 0.2 0.2" glossiness ="128"/>

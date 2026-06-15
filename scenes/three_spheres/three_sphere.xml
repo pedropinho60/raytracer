@@ -4,9 +4,10 @@
     <camera type="perspective" fovy="45" />
     <integrator type="blinn_phong" depth="2" />
     <!-- Objects storage -->
-    <aggregator type="list"/>
+    <!-- <aggregator type="list" /> -->
+    <aggregator type="bvh" max_prims_per_node="4"/>
 
-    <film type="image" w_res="1920" h_res="1080" filename="3_spheres_plane_below.png" img_type="png" gamma_corrected="false" />
+    <film type="image" w_res="3840" h_res="2160" filename="3_spheres_plane_below.png" img_type="png" gamma_corrected="false" />
     <!-- The Scene -->
     <world_begin/>
 
