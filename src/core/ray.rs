@@ -15,7 +15,7 @@ impl Ray {
             origin,
             direction,
             inv_dir: direction.recip(),
-            t_min: 0.0001,
+            t_min: 0.01,
             t_max: f32::INFINITY,
         }
     }
