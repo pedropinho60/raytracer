@@ -209,9 +209,7 @@ impl Bvh {
 
         if num_prims <= 4 {
             primitive_info.select_nth_unstable_by(mid, |a, b| {
-                a.centroid[split_axis as usize]
-                    .partial_cmp(&b.centroid[split_axis as usize])
-                    .unwrap()
+                a.centroid[split_axis as usize].total_cmp(&b.centroid[split_axis as usize])
             });
         } else {
             let mut buckets = [BucketInfo {
