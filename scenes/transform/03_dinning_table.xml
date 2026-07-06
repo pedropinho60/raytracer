@@ -1,0 +1,7 @@
+<RT3>
+    <!-- <named_material name="white"/> -->
+    <material type="blinn" diffuse="0.62  0.32  0.17" ambient="0 0 0" specular="0.8 0.8 0.8" mirror="0.1 0.1 0.1" glossiness="128"/>
+    <scale value="0.08 0.08 0.08 "/>
+    <object type="trianglemesh" filename="models/table/table.obj"
+        compute_normals="false" backface_cull ="true" reverse_vertex_order="false"/>
+</RT3>

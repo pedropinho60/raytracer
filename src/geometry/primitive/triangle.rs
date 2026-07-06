@@ -3,6 +3,7 @@ use std::sync::Arc;
 use glam::{Vec2, Vec3A};
 
 use crate::{
+    api::Transform,
     core::ray::Ray,
     geometry::{
         bounding_box::BoundingBox, hittable::Hittable, primitive::Primitive, surfel::HitRecord,
@@ -26,6 +27,7 @@ impl TriangleMesh {
         reverse_vertex_order: bool,
         backface_cull: bool,
         material_id: usize,
+        transform: &Arc<Transform>,
     ) -> Vec<Hittable> {
         let mut triangles = Vec::new();
 
@@ -95,6 +97,7 @@ impl TriangleMesh {
                     Primitive::new(
                         Triangle::new(mesh.clone(), i, backface_cull).into(),
                         material_id,
+                        transform.clone(),
                     )
                     .into(),
                 );

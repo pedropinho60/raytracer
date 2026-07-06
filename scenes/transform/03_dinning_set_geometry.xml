@@ -1,0 +1,113 @@
+<RT3>
+    <!-- The Scene -->
+    <world_begin/>
+        <!-- The Background -->
+        <background type="colors" bl="36 59 85" tl="2 30 48" tr="25 30 48" br="36 59 85" />
+        <!-- Lights -->
+        <light_source type="directional" I="0.6 0.6 0.6" scale="1 1 1" from="40 30 -30" to="0 0 0"/>
+        <light_source type="directional" I="0.2 0.2 0.2" scale="1 1 1" from="-30 5 -15" to="0 0 0"/>
+
+        <make_named_material type="blinn" name="white" diffuse="0.95 0.95 0.95" ambient="0 0 0" specular="1 1 1" mirror="0.09 0.09 0.09" glossiness="0" />
+        <make_named_material type="blinn" name="gold" diffuse ="1 0.65 0.0" ambient="0 0 0" specular ="0.8 0.6 0.2" mirror ="0.4 0.4 0.4" glossiness ="512"/>
+
+        <named_material name="gold"/>
+        <object type="trianglemesh" material="gold" ntriangles ="2" 
+            vertex_indices="0 1 2 0 2 3"
+            normal_indices="0 1 2 0 2 3"
+            vertices ="-40 0 30  40 0 30  40 0 -30  -40 0 -30"
+            normals ="0 1 0  0 1 0  0 1 0  0 1 0 "
+            reverse_vertex_order="false"
+            backface_cull ="true"/>
+
+        <!-- Dinning set #1 -->
+        <push_CTM/>
+            <translate value="12 0 0 " />
+            <push_CTM/>
+                <translate value="0 4.1 0" />
+                <include filename="03_dinning_table.xml" />
+            <pop_CTM/>
+            <!-- Chair #1, at the head of the table -->
+            <push_CTM/>
+                <translate value="0 0 -11.2" />
+                <rotate axis="0 1 0" angle="35.0"/>
+                <include filename="03_dinning_chair.xml" />
+            <pop_CTM/>
+            <!-- Chair #2, at the tail end of the table -->
+            <push_CTM/>
+                <rotate axis="0 1 0" angle="180.0"/>
+                <translate value="0 0 -8.2" />
+                <include filename="03_dinning_chair.xml" />
+            <pop_CTM/>
+            <!-- Chair #3, first chair on the right, next to the head of the table -->
+            <push_CTM/>
+                <rotate axis="0 1 0" angle="-90.0"/>
+                <translate value="-4.5 0 -5.2" />
+                <include filename="03_dinning_chair.xml" />
+            <pop_CTM/>
+            <!-- Chair #4, second chair on the right, next to the tail end of the table -->
+            <push_CTM/>
+                <rotate axis="0 1 0" angle="-90.0"/>
+                <translate value="4.5 0 -5.2" />
+                <include filename="03_dinning_chair.xml" />
+            <pop_CTM/>
+            <!-- Chair #5, first chair on the left, next to the head of the table -->
+            <push_CTM/>
+                <rotate axis="0 1 0" angle="90.0"/>
+                <translate value="4.5 0 -5.2" />
+                <include filename="03_dinning_chair.xml" />
+            <pop_CTM/>
+            <!-- Chair #6, second chair on the left, next to the tail end of the table -->
+            <push_CTM/>
+                <rotate axis="0 1 0" angle="90.0"/>
+                <translate value="-4.5 0 -5.2" />
+                <include filename="03_dinning_chair.xml" />
+            <pop_CTM/>
+        <pop_CTM/>
+            <!-- Dinning set #2 -->
+        <push_CTM/>
+            <translate value="-12 0 0 " />
+            <rotate axis="0 1 0" angle="35.0"/>
+            <push_CTM/>
+                <translate value="0 4.1 0" />
+                <include filename="03_dinning_table.xml" />
+            <pop_CTM/>
+            <!-- Chair #1, at the head of the table -->
+            <push_CTM/>
+                <translate value="0 0 -11.2" />
+                <rotate axis="0 1 0" angle="35.0"/>
+                <include filename="03_dinning_chair.xml" />
+            <pop_CTM/>
+            <!-- Chair #2, at the tail end of the table -->
+            <push_CTM/>
+                <rotate axis="0 1 0" angle="180.0"/>
+                <translate value="0 0 -8.2" />
+                <include filename="03_dinning_chair.xml" />
+            <pop_CTM/>
+            <!-- Chair #3, first chair on the right, next to the head of the table -->
+            <push_CTM/>
+                <rotate axis="0 1 0" angle="-90.0"/>
+                <translate value="-4.5 0 -5.2" />
+                <include filename="03_dinning_chair.xml" />
+            <pop_CTM/>
+            <!-- Chair #4, second chair on the right, next to the tail end of the table -->
+            <push_CTM/>
+                <rotate axis="0 1 0" angle="-90.0"/>
+                <translate value="4.5 0 -5.2" />
+                <include filename="03_dinning_chair.xml" />
+            <pop_CTM/>
+            <!-- Chair #5, first chair on the left, next to the head of the table -->
+            <push_CTM/>
+                <rotate axis="0 1 0" angle="90.0"/>
+                <translate value="4.5 0 -5.2" />
+                <include filename="03_dinning_chair.xml" />
+            <pop_CTM/>
+            <!-- Chair #6, second chair on the left, next to the tail end of the table -->
+            <push_CTM/>
+                <rotate axis="0 1 0" angle="90.0"/>
+                <translate value="-4.5 0 -5.2" />
+                <include filename="03_dinning_chair.xml" />
+            <pop_CTM/>
+        <pop_CTM/>
+
+    <world_end/>
+</RT3>

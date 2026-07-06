@@ -4,6 +4,7 @@ use derive_more::From;
 use glam::Vec2;
 
 use crate::{
+    api::Transform,
     core::ray::Ray,
     error::Result,
     geometry::{
@@ -31,6 +32,7 @@ impl Hittable {
     pub fn from_object(
         object_dto: ObjectDTO,
         material_id: usize,
+        transform: Arc<Transform>,
         xml_file_path: &Path,
     ) -> Result<Vec<Hittable>> {
         match object_dto {
@@ -42,11 +44,17 @@ impl Hittable {
                     }
                     .into(),
                     material_id,
+                    transform,
                 )
                 .into(),
             ]),
             ObjectDTO::Plane { point, normal } => Ok(vec![
-                Primitive::new(Plane::new(point.into(), normal.into()).into(), material_id).into(),
+                Primitive::new(
+                    Plane::new(point.into(), normal.into()).into(),
+                    material_id,
+                    transform,
+                )
+                .into(),
             ]),
             ObjectDTO::TriangleMesh(TriangleMeshDTO::Inline {
                 ntriangles,
@@ -74,6 +82,7 @@ impl Hittable {
                         Primitive::new(
                             Triangle::new(mesh.clone(), i, backface_cull.unwrap_or(true)).into(),
                             material_id,
+                            transform.clone(),
                         )
                         .into()
                     })
@@ -101,6 +110,7 @@ impl Hittable {
                     reverse_vertex_order,
                     backface_cull.unwrap_or(true),
                     material_id,
+                    &transform,
                 );
 
                 Ok(triangles)

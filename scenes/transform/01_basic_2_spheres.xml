@@ -1,0 +1,17 @@
+<RT3>
+    <lookat look_from="0 2 -7" look_at="0 0 0" up="0 1 0" />
+    <camera type="perspective" fovy="30" /> <!--  screen_window="-5.3 5.3 -4 4" /> -->
+    <aggregator type="bvh" split_method="middle" max_prims_per_node="4" />
+    <integrator type="blinn_phong" depth="3" />
+    <film type="image" x_res="2400" y_res="1800" crop_window="0 1 0 1"
+        filename="01_basic_2_spheres_persp.png" img_type="png" gamma_corrected="true" />
+
+    <include filename="01_basic_2_spheres_geometry.xml" />
+
+    <lookat look_from="0 7 0" look_at="0 0 0" up="0 0 1" />
+    <camera type="orthographic" screen_window="-5.3 5.3 -4 4"/>
+    <film type="image" x_res="2400" y_res="1800" crop_window="0 1 0 1" filename="01_basic_2_spheres_ortho.png" img_type="png" gamma_corrected="true" />
+
+    <include filename="01_basic_2_spheres_geometry.xml" />
+
+</RT3>

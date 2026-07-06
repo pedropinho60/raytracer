@@ -1,0 +1,18 @@
+<RT3>
+    <lookat look_from="10 12 -30" look_at="0 2.5 0" up="0 1 0" />
+    <camera type="perspective" fovy="75" /> 
+    <aggregator type="bvh" split_method="equal" max_prims_per_node="4" />
+    <!-- <accelerator type="list"/> -->
+    <integrator type="blinn_phong" depth="3" />
+    <film type="image" x_res="1600" y_res="1200" filename="03_dinning_set_persp.png" img_type="png" gamma_corrected="true"/>
+
+    <!-- The Scene -->
+    <include filename="03_dinning_set_geometry.xml" />
+
+    <lookat look_from="0 20 0 " look_at="0 0 0" up="-10 0 30" />
+    <camera type="orthographic" screen_window="-26.5 26.5 -20 20" />
+    <film type="image" x_res="1600" y_res="1200" filename="03_dinning_set_ortho.png" img_type="png" />
+
+    <!-- The Scene -->
+    <include filename="03_dinning_set_geometry.xml" />
+</RT3>

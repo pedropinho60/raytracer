@@ -1,4 +1,6 @@
-use std::{collections::HashMap, fs, path::Path, time::Instant};
+use std::{collections::HashMap, fs, path::Path, sync::Arc, time::Instant};
+
+use glam::{Affine3A, Vec3};
 
 use crate::{
     Result,
@@ -13,6 +15,18 @@ use crate::{
     scene::{Scene, background::Background, camera::Camera, light::Light, material::Material},
 };
 
+#[derive(Debug, Clone, Default)]
+pub struct GraphicsState {
+    pub current_material: Option<usize>,
+    pub material_lib: Arc<HashMap<String, usize>>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Transform {
+    pub obj_to_world: Affine3A,
+    pub world_to_obj: Affine3A,
+}
+
 pub struct RenderState {
     pub current_film: Option<Film>,
     pub current_background: Option<Background>,
@@ -20,11 +34,14 @@ pub struct RenderState {
     pub current_camera_dto: Option<CameraDTO>,
     pub current_integrator_dto: Option<IntegratorDTO>,
     pub current_aggregator_dto: Option<AggregatorDTO>,
+    pub current_gs: GraphicsState,
+    pub current_tm: Arc<Transform>,
 
     pub materials: Vec<Material>,
-    pub material_names: HashMap<String, usize>,
     pub primitives: Vec<Hittable>,
     pub lights: Vec<Light>,
+    pub gs_stack: Vec<GraphicsState>,
+    pub tm_stack: Vec<Arc<Transform>>,
 }
 
 impl RenderState {
@@ -37,9 +54,12 @@ impl RenderState {
             current_integrator_dto: None,
             current_aggregator_dto: None,
             materials: Vec::new(),
-            material_names: HashMap::new(),
             primitives: Vec::new(),
             lights: Vec::new(),
+            tm_stack: Vec::new(),
+            current_gs: GraphicsState::default(),
+            current_tm: Arc::default(),
+            gs_stack: Vec::new(),
         }
     }
 
@@ -131,14 +151,12 @@ fn load_rt3_file(file_path: &Path) -> Result<Rt3> {
 
 pub struct SceneBuilder {
     pub state: RenderState,
-    current_material: Option<usize>,
 }
 
 impl SceneBuilder {
     pub fn new() -> Self {
         Self {
             state: RenderState::new(),
-            current_material: None,
         }
     }
 
@@ -185,11 +203,16 @@ impl SceneBuilder {
                     self.state.current_camera_args = Some(camera_args);
                 }
                 SceneCommand::Object(object_dto) => {
-                    let material_id = self.current_material.ok_or(SceneError::MissingComponent(
-                        "missing material for object".into(),
-                    ))?;
+                    let material_id = self.state.current_gs.current_material.ok_or(
+                        SceneError::MissingComponent("missing material for object".into()),
+                    )?;
 
-                    let primitives = Hittable::from_object(object_dto, material_id, file_path)?;
+                    let primitives = Hittable::from_object(
+                        object_dto,
+                        material_id,
+                        self.state.current_tm.clone(),
+                        file_path,
+                    )?;
 
                     self.state.primitives.extend(primitives);
                 }
@@ -199,7 +222,7 @@ impl SceneBuilder {
                     let index = self.state.materials.len();
                     self.state.materials.push(material);
 
-                    self.current_material = Some(index);
+                    self.state.current_gs.current_material = Some(index);
                 }
                 SceneCommand::MakeNamedMaterial {
                     name,
@@ -210,12 +233,17 @@ impl SceneBuilder {
                     let index = self.state.materials.len();
                     self.state.materials.push(material);
 
-                    self.state.material_names.insert(name, index);
+                    let lib = Arc::make_mut(&mut self.state.current_gs.material_lib);
+
+                    lib.insert(name, index);
                 }
                 SceneCommand::NamedMaterial { name } => {
-                    self.current_material = Some(*self.state.material_names.get(&name).ok_or(
-                        SceneError::MissingComponent(format!("material `{name}` does not exist")),
-                    )?);
+                    self.state.current_gs.current_material =
+                        Some(*self.state.current_gs.material_lib.get(&name).ok_or(
+                            SceneError::MissingComponent(format!(
+                                "material `{name}` does not exist"
+                            )),
+                        )?);
                 }
                 SceneCommand::Integrator(integrator_dto) => {
                     self.state.current_integrator_dto = Some(integrator_dto);
@@ -223,6 +251,61 @@ impl SceneBuilder {
                 SceneCommand::LightSource(light_dto) => self.state.lights.push(light_dto.into()),
                 SceneCommand::Aggregator(aggregator_dto) => {
                     self.state.current_aggregator_dto = Some(aggregator_dto);
+                }
+                SceneCommand::PushGS => {
+                    self.state.gs_stack.push(self.state.current_gs.clone());
+                    self.state.tm_stack.push(self.state.current_tm.clone());
+                }
+                SceneCommand::PopGS => {
+                    self.state.current_gs = self.state.gs_stack.pop().unwrap();
+                    self.state.current_tm = self.state.tm_stack.pop().unwrap();
+                }
+                SceneCommand::PushCTM => {
+                    self.state.tm_stack.push(self.state.current_tm.clone());
+                }
+                SceneCommand::PopCTM => {
+                    self.state.current_tm = self.state.tm_stack.pop().unwrap();
+                }
+                SceneCommand::Identity => {
+                    self.state.current_tm = Arc::default();
+                }
+                SceneCommand::Translate { value } => {
+                    let trans_vec: Vec3 = value.into();
+
+                    let translation = Affine3A::from_translation(trans_vec);
+                    let translation_inv = Affine3A::from_translation(-trans_vec);
+
+                    let tm = Arc::make_mut(&mut self.state.current_tm);
+
+                    tm.obj_to_world *= translation;
+
+                    tm.world_to_obj = translation_inv * tm.world_to_obj;
+                }
+                SceneCommand::Scale { value } => {
+                    let scale_vec: Vec3 = value.into();
+
+                    let scale = Affine3A::from_scale(scale_vec);
+                    let scale_inv = Affine3A::from_scale(1.0 / scale_vec);
+
+                    let tm = Arc::make_mut(&mut self.state.current_tm);
+
+                    tm.obj_to_world *= scale;
+
+                    tm.world_to_obj = scale_inv * tm.world_to_obj;
+                }
+                SceneCommand::Rotate { angle, axis } => {
+                    let axis_vec: Vec3 = axis.into();
+
+                    let angle = angle.to_radians();
+
+                    let rotation = Affine3A::from_axis_angle(axis_vec, angle);
+                    let rotation_inv = Affine3A::from_axis_angle(axis_vec, -angle);
+
+                    let tm = Arc::make_mut(&mut self.state.current_tm);
+
+                    tm.obj_to_world *= rotation;
+
+                    tm.world_to_obj = rotation_inv * tm.world_to_obj;
                 }
             }
         }

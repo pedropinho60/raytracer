@@ -1,0 +1,64 @@
+<RT3>
+    <!-- The Scene -->
+    <world_begin/>
+        <!-- The Background -->
+        <background type="colors" bl="36 59 85" tl="2 30 48" tr="25 30 48" br="36 59 85" />
+        <!-- Lights -->
+        <!-- <light_source type="directional" L="0.9 0.9 0.9" from="0 -5 -14"/> -->
+        <!-- <light_source type="directional" L="0.9 0.9 0.9" from="4 6 3"/> -->
+        <light_source type="directional" I="0.6 0.6 0.6" scale="1 1 1" from="40 30 -30" to="0 0 0"/>
+        <!-- <light_source type="directional" L="0.8 0.8 0.8" from="5 5 -10"/> -->
+        <light_source type="directional" I="0.2 0.2 0.2" scale="1 1 1" from="-30 5 -15" to="0 0 0"/>
+
+        <make_named_material type="blinn" name="jade"  diffuse="0 0.65 0.29" ambient="0.1 0.1 0.1" specular="0.8 0.8 0.8" mirror="0.1 0.1 0.1" glossiness="128"/>
+        <make_named_material type="blinn" name="white" diffuse="0.95 0.95 0.95" ambient="0.1 0.1 0.1" specular="1 1 1" mirror="0.09 0.09 0.09" glossiness="0" />
+        <make_named_material type="blinn" name="gold" diffuse ="1 0.65 0.0" ambient="0.1 0.1 0.1" specular ="0.8 0.6 0.2"
+            mirror ="0.4 0.4 0.4" glossiness ="512"/>
+
+
+        <named_material name="gold"/>
+        <object type="trianglemesh" material="gold"
+            ntriangles ="2"
+            vertex_indices ="0 1 2 0 2 3"
+            normal_indices ="0 1 2 0 2 3"
+            vertices ="-40 0 30  40 0 30  40 0 -30  -40 0 -30"
+            normals ="0 1 0  0 1 0  0 1 0  0 1 0 "
+            reverse_vertex_order="false"
+            backface_cull ="true"/>
+
+        <push_GS/>
+            <named_material name="white"/>
+            <object type="trianglemesh" filename="models/body.obj"
+            reverse_vertex_order="false"
+            backface_cull ="true"/>
+
+            <!-- TROCAR COM O DE BAIXO PARA VER O EFEITO -->
+            <!-- <rotate axis="0 1 0" angle="90.001"/> -->
+            <rotate axis="1 0 0" angle="60"/>
+            <!-- <scale value="1 2 1 "/> -->
+            <material type="blinn" diffuse="0.9 0.2 0.1" ambient="0.1 0.1 0.1" glossiness="0" specular="0 0 0"/>
+            <object type="trianglemesh" filename="models/body.obj"
+            reverse_vertex_order="false"
+            backface_cull ="true"/>
+
+            <!-- TROCAR COM O DE CIMA PARA VER O EFEITO -->
+            <translate value="0 7 0" />
+            <named_material name="jade"/>
+            <object type="trianglemesh" filename="models/body.obj"
+            reverse_vertex_order="false"
+            backface_cull ="true"/>
+
+            <!-- <rotate axis="0 1 0" angle="90.001"/> -->
+            <rotate axis="0 0 1" angle="90"/>
+            <!-- <scale value="1 2 1 "/> -->
+            <material type="blinn" ambient="0.1 0.1 0.1" diffuse="0.9 0.9 0.1" glossiness="0" specular="0 0 0"/>
+            <object type="trianglemesh" filename="models/body.obj"
+            reverse_vertex_order="false"
+            backface_cull ="true"/>
+
+            <!-- <object type="trianglemesh" filename="../test_scene/models/new_teapot/lid.obj" -->
+            <!-- reverse_vertex_order="false"                                                   -->
+            <!-- backface_cull ="true"/>                                                        -->
+        <pop_GS/>
+    <world_end/>
+</RT3>

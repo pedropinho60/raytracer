@@ -1,0 +1,7 @@
+<RT3>
+    <!-- <material type="blinn" diffuse="123 104 238" specular="0.8 0.8 0.8" mirror="0.1 0.1 0.1" glossiness="128"/> -->
+    <material type="blinn" diffuse="0.86 0.86 0.86" ambient="0 0 0" specular="0.8 0.8 0.8" mirror="0.1 0.1 0.1" glossiness="128"/>
+    <scale value="0.1 0.1 0.1 "/>
+    <rotate axis="1 0 0" angle="-90.01"/>
+    <object type="trianglemesh" filename="models/wooden_chair/chair.obj" backface_cull ="true"/>
+</RT3>

@@ -9,7 +9,7 @@ use crate::{
     scene::{camera::ViewPlane, light::Attenuation},
 };
 
-fn parse_from_string<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+pub(super) fn parse_from_string<'de, T, D>(deserializer: D) -> Result<T, D::Error>
 where
     D: Deserializer<'de>,
     T: FromStr,
@@ -344,6 +344,12 @@ impl<'de> Deserialize<'de> for Vec3DTO {
 }
 
 impl From<Vec3DTO> for Vec3A {
+    fn from(value: Vec3DTO) -> Self {
+        Self::new(value.x, value.y, value.z)
+    }
+}
+
+impl From<Vec3DTO> for glam::Vec3 {
     fn from(value: Vec3DTO) -> Self {
         Self::new(value.x, value.y, value.z)
     }
