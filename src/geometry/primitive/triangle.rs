@@ -22,12 +22,13 @@ pub struct TriangleMesh {
 }
 
 impl TriangleMesh {
+    #[allow(clippy::needless_pass_by_value)]
     pub fn from_obj(
         models: &[tobj::Model],
         reverse_vertex_order: bool,
         backface_cull: bool,
         material_id: usize,
-        transform: &Arc<Transform>,
+        transform: Arc<Transform>,
     ) -> Vec<Hittable> {
         let mut triangles = Vec::new();
 

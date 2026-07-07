@@ -110,7 +110,7 @@ impl Hittable {
                     reverse_vertex_order,
                     backface_cull.unwrap_or(true),
                     material_id,
-                    &transform,
+                    transform,
                 );
 
                 Ok(triangles)
