@@ -24,6 +24,7 @@ cargo run --release -- <arquivo_de_cena>
 - Suporte a esferas, planos infinitos e malhas triangulares.
 - Leitura de malhas de arquivos `.obj`.
 - Acelerador de renderização com `BVH`.
+- Transformações geométricas.
 
 # Extras
 
